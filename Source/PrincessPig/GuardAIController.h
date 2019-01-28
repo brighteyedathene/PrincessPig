@@ -33,6 +33,12 @@ public:
 	FName PatrolPointKey;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	FName PatrolPointTargetKey;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	FName PatrolIndexKey;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	FName TimerKey;
 
 };

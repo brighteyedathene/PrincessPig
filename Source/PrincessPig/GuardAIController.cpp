@@ -8,17 +8,20 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "DrawDebugHelpers.h"
 
 AGuardAIController::AGuardAIController()
 {
 	BehaviorTreeComp = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComp"));
-
 	BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComp"));
 
 	PatrolPointKey = "PatrolPoint";
+	PatrolPointTargetKey = "PatrolPointTarget";
 	PatrolIndexKey = "PatrolIndex";
+	TimerKey = "Timer";
+
 }
 
 void AGuardAIController::Possess(APawn* Pawn)

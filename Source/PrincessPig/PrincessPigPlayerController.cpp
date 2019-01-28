@@ -6,6 +6,11 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "PrincessPigCharacter.h"
 #include "Engine/World.h"
+
+#include "PrincessPigCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
+
 #include "DrawDebugHelpers.h"
 
 APrincessPigPlayerController::APrincessPigPlayerController()
@@ -26,6 +31,20 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 
 	DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(),
 		GetPawn()->GetActorLocation() + GetControlRotation().Quaternion().GetForwardVector() * 200.f, FColor::Cyan);
+
+	UpdateControlRotation(DeltaTime);
+}
+
+void APrincessPigPlayerController::UpdateControlRotation(float DeltaTime)
+{
+	if (!GetPawn()->GetVelocity().IsNearlyZero())
+	{
+		float RotationAlpha = fminf(1, fmaxf(0, 0.5 * DeltaTime));
+		float NewYaw = GetControlRotation().Yaw * RotationAlpha + GetPawn()->GetVelocity().ToOrientationRotator().Yaw * (1 - RotationAlpha);
+		FRotator NewControlRotation = GetControlRotation();
+		NewControlRotation.Yaw = NewYaw;
+		SetControlRotation(NewControlRotation);
+	}
 }
 
 void APrincessPigPlayerController::SetupInputComponent()
@@ -48,6 +67,18 @@ void APrincessPigPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("ResetVR", IE_Pressed, this, &APrincessPigPlayerController::OnResetVR);
 }
+
+void APrincessPigPlayerController::Possess(APawn* Pawn)
+{
+	Super::Possess(Pawn);
+
+	//APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
+	//if (PPCharacter)
+	//{
+	//	PPCharacter->GetCharacterMovement()->AvoidanceConsiderationRadius = 0;
+	//}
+}
+
 
 void APrincessPigPlayerController::OnResetVR()
 {

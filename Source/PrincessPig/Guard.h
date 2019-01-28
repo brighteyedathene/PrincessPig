@@ -18,6 +18,9 @@ class PRINCESSPIG_API AGuard : public APrincessPigCharacter
 	GENERATED_BODY()
 
 public:
+
+	AGuard();
+
 	UPROPERTY(EditAnywhere, Category = "AI")
 	UBehaviorTree* BehaviorTree;
 

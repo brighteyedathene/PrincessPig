@@ -12,7 +12,6 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 {
 	bNotifyTick = true;
 
-
 	AGuardAIController* GuardAI = Cast<AGuardAIController>(OwnerComp.GetAIOwner());
 	AGuard* Guard = GuardAI ? Cast<AGuard>(GuardAI->GetPawn()) : nullptr;
 
@@ -20,15 +19,11 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 	{
 		UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
 
-		APatrolPoint* PatrolPoint = Cast<APatrolPoint>(BlackboardComp->GetValueAsObject(GuardAI->PatrolPointKey));
+		// Look in the appropriate direction for the current patrol point
+		GuardAI->SetFocalPoint(BlackboardComp->GetValueAsVector(GuardAI->PatrolPointTargetKey));
 
-
-		// Turn towards the point 
-		GuardAI->SetControlRotation(PatrolPoint->GetActorRotation());
-
-		DrawDebugLine(GetWorld(), Guard->GetActorLocation(), Guard->GetActorLocation() + Guard->GetControlRotation().Quaternion().GetForwardVector() * 300, FColor::Green, true, 4, 0, 3.f);
-
-		Timer = 0;
+		// Initialise the patrol point wait timer
+		BlackboardComp->SetValueAsFloat(GuardAI->TimerKey, 0.f);
 
 		return EBTNodeResult::InProgress;
 	}
@@ -38,10 +33,31 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 
 void UBTT_WaitAtPatrolPoint::TickTask(UBehaviorTreeComponent & OwnerComp, uint8 * NodeMemory, float DeltaSeconds)
 {
-	Timer += DeltaSeconds;
-	if (Timer > WaitTime)
+	AGuardAIController* GuardAI = Cast<AGuardAIController>(OwnerComp.GetAIOwner());
+	if (GuardAI)
 	{
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
+
+		// Update the wait timer
+		float Timer = BlackboardComp->GetValueAsFloat(GuardAI->TimerKey);
+		Timer += DeltaSeconds;
+
+		// TODO: Add a WaitTime variable to APatrolPoint and read from it here
+		if (Timer > WaitTime)
+		{
+			// Stop looking at the patrol point target
+			GuardAI->SetFocus(nullptr);
+
+			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		}
+		else
+		{
+			BlackboardComp->SetValueAsFloat(GuardAI->TimerKey, Timer);
+		}
+	}
+	else
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 	}
 
 }

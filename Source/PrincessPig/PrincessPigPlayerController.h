@@ -21,8 +21,11 @@ public:
 	// Begin PlayerController interface
 	virtual void PlayerTick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
+	virtual void Possess(APawn* Pawn) override;
 	// End PlayerController interface
 
+
+#pragma region InputEvents
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
 
@@ -44,6 +47,11 @@ public:
 	
 	void OnUseItemPressed();
 	void OnUseItemReleased();
+
+#pragma endregion InputEvents
+
+
+	void UpdateControlRotation(float DeltaTime);
 };
 
 

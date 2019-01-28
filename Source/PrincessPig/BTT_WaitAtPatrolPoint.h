@@ -21,5 +21,4 @@ class PRINCESSPIG_API UBTT_WaitAtPatrolPoint : public UBTTaskNode
 	UPROPERTY(EditAnywhere, Category = Patrol)
 	float WaitTime;
 
-	float Timer;
 };

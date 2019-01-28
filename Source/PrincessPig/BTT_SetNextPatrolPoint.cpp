@@ -22,9 +22,12 @@ EBTNodeResult::Type UBTT_SetNextPatrolPoint::ExecuteTask(UBehaviorTreeComponent&
 
 			int NextIndex = (CurrentIndex + 1) % Guard->PatrolRoute->PatrolPoints.Num();
 			APatrolPoint* NextPatrolPoint = Guard->PatrolRoute->PatrolPoints[NextIndex];
+			FVector NextPatrolPointTarget = NextPatrolPoint->GetActorLocation() + NextPatrolPoint->GetActorForwardVector() * 200.f;
+			
 
 			BlackboardComp->SetValueAsInt(GuardAI->PatrolIndexKey, NextIndex);
 			BlackboardComp->SetValueAsObject(GuardAI->PatrolPointKey, NextPatrolPoint);
+			BlackboardComp->SetValueAsVector(GuardAI->PatrolPointTargetKey, NextPatrolPointTarget);
 
 			return EBTNodeResult::Succeeded;
 		}
