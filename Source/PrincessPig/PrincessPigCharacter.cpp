@@ -12,18 +12,21 @@
 #include "Materials/Material.h"
 #include "Engine/World.h"
 
+#include "DrawDebugHelpers.h"
+
 APrincessPigCharacter::APrincessPigCharacter()
 {
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// Don't rotate character to camera direction
+	// Rotate character to control rotation
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Rotate character to moving direction
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Rotate character to moving direction
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 640.f, 0.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
@@ -87,4 +90,7 @@ void APrincessPigCharacter::Tick(float DeltaSeconds)
 			CursorToWorld->SetWorldRotation(CursorR);
 		}
 	}
+
+	DrawDebugLine(GetWorld(), GetActorLocation() + GetActorRightVector() * 5.f,
+		GetActorLocation() + GetActorRightVector() * 5.f + GetControlRotation().Quaternion().GetForwardVector() * 200.f, FColor::Orange, false, 0, 0, 2.f);
 }

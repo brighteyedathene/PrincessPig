@@ -6,6 +6,9 @@
 #include "PrincessPigCharacter.h"
 #include "Guard.generated.h"
 
+class UBehaviorTree;
+class APatrolRoute;
+
 /**
  * 
  */
@@ -13,8 +16,13 @@ UCLASS()
 class PRINCESSPIG_API AGuard : public APrincessPigCharacter
 {
 	GENERATED_BODY()
-	
-	
-	
+
+public:
+	UPROPERTY(EditAnywhere, Category = "AI")
+	UBehaviorTree* BehaviorTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	APatrolRoute* PatrolRoute;
+
 	
 };
