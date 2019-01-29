@@ -29,9 +29,7 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 		MoveToMouseCursor();
 	}
 
-	DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(),
-		GetPawn()->GetActorLocation() + GetControlRotation().Quaternion().GetForwardVector() * 200.f, FColor::Cyan);
-
+	// interpolate control rotation towards velocity
 	UpdateControlRotation(DeltaTime);
 }
 
@@ -61,43 +59,15 @@ void APrincessPigPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("MoveForward", this, &APrincessPigPlayerController::OnMoveForward);
 	InputComponent->BindAxis("MoveRight", this, &APrincessPigPlayerController::OnMoveRight);
 
-	// support touch devices 
-	InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &APrincessPigPlayerController::MoveToTouchLocation);
-	InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &APrincessPigPlayerController::MoveToTouchLocation);
-
-	InputComponent->BindAction("ResetVR", IE_Pressed, this, &APrincessPigPlayerController::OnResetVR);
 }
 
 void APrincessPigPlayerController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
-
-	//APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
-	//if (PPCharacter)
-	//{
-	//	PPCharacter->GetCharacterMovement()->AvoidanceConsiderationRadius = 0;
-	//}
-}
-
-
-void APrincessPigPlayerController::OnResetVR()
-{
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
 void APrincessPigPlayerController::MoveToMouseCursor()
 {
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-	{
-		if (APrincessPigCharacter* MyPawn = Cast<APrincessPigCharacter>(GetPawn()))
-		{
-			if (MyPawn->GetCursorToWorld())
-			{
-				UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, MyPawn->GetCursorToWorld()->GetComponentLocation());
-			}
-		}
-	}
-	else
 	{
 		// Trace to see what is under the mouse cursor
 		FHitResult Hit;
@@ -108,20 +78,6 @@ void APrincessPigPlayerController::MoveToMouseCursor()
 			// We hit something, move there
 			SetNewMoveDestination(Hit.ImpactPoint);
 		}
-	}
-}
-
-void APrincessPigPlayerController::MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	FVector2D ScreenSpaceLocation(Location);
-
-	// Trace to see what is under the touch location
-	FHitResult HitResult;
-	GetHitResultAtScreenPosition(ScreenSpaceLocation, CurrentClickTraceChannel, true, HitResult);
-	if (HitResult.bBlockingHit)
-	{
-		// We hit something, move there
-		SetNewMoveDestination(HitResult.ImpactPoint);
 	}
 }
 
