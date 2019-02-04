@@ -48,7 +48,6 @@ void UBTT_WaitAtPatrolPoint::TickTask(UBehaviorTreeComponent & OwnerComp, uint8 
 		{
 			// Stop looking at the patrol point target
 			GuardAI->ClearFocus(EAIFocusPriority::Gameplay);
-			;
 
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 		}
@@ -62,4 +61,12 @@ void UBTT_WaitAtPatrolPoint::TickTask(UBehaviorTreeComponent & OwnerComp, uint8 
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 	}
 
+}
+
+
+EBTNodeResult::Type UBTT_WaitAtPatrolPoint::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
+	
+	return EBTNodeResult::Aborted;
 }
