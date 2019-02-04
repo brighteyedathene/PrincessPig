@@ -35,14 +35,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Perception, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionStimuliSourceComponent* PerceptionStimuliSource;
 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		float MaxRunSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		float MaxWalkSpeed;
-
-
 	// IGenericTeamAgentInterface
 public:
 	FGenericTeamId TeamId;
