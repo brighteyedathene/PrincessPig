@@ -20,7 +20,7 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 		UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
 
 		// Look in the appropriate direction for the current patrol point
-		GuardAI->SetFocalPoint(BlackboardComp->GetValueAsVector(GuardAI->PatrolPointTargetKey));
+		GuardAI->SetFocalPoint(BlackboardComp->GetValueAsVector(GuardAI->PatrolPointLookTargetKey), EAIFocusPriority::Gameplay);
 
 		// Initialise the patrol point wait timer
 		BlackboardComp->SetValueAsFloat(GuardAI->TimerKey, 0.f);
@@ -33,6 +33,7 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 
 void UBTT_WaitAtPatrolPoint::TickTask(UBehaviorTreeComponent & OwnerComp, uint8 * NodeMemory, float DeltaSeconds)
 {
+
 	AGuardAIController* GuardAI = Cast<AGuardAIController>(OwnerComp.GetAIOwner());
 	if (GuardAI)
 	{
@@ -46,7 +47,8 @@ void UBTT_WaitAtPatrolPoint::TickTask(UBehaviorTreeComponent & OwnerComp, uint8 
 		if (Timer > WaitTime)
 		{
 			// Stop looking at the patrol point target
-			GuardAI->SetFocus(nullptr);
+			GuardAI->ClearFocus(EAIFocusPriority::Gameplay);
+			;
 
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 		}

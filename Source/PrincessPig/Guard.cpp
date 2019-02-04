@@ -8,6 +8,9 @@ AGuard::AGuard()
 {
 	GetCharacterMovement()->bUseRVOAvoidance = true; 
 	GetCharacterMovement()->AvoidanceConsiderationRadius = 200.f;
+
+	SetGenericTeamId(FGenericTeamId(1));
+	Tags.AddUnique(FName("Character.Guard"));
 }
 
 

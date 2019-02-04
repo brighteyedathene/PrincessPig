@@ -2,6 +2,12 @@
 
 #include "Princess.h"
 
+APrincess::APrincess()
+{
+	SetGenericTeamId(255);
 
+	Tags.AddUnique(FName("Character.Princess"));
+
+}
 
 

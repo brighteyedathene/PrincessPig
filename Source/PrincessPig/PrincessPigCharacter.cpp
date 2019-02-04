@@ -10,6 +10,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+
 
 #include "DrawDebugHelpers.h"
 
@@ -57,6 +59,9 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	// Create perception stimuli source
+	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
 }
 
 void APrincessPigCharacter::Tick(float DeltaSeconds)
@@ -79,3 +84,15 @@ void APrincessPigCharacter::Tick(float DeltaSeconds)
 	DrawDebugLine(GetWorld(), GetActorLocation() + GetActorRightVector() * 5.f,
 		GetActorLocation() + GetActorRightVector() * 5.f + GetControlRotation().Quaternion().GetForwardVector() * 200.f, FColor::Orange, false, 0, 0, 2.f);
 }
+
+
+// IGenericTeamAgentInterface
+FGenericTeamId APrincessPigCharacter::GetGenericTeamId() const
+{
+	return TeamId;
+}
+void APrincessPigCharacter::SetGenericTeamId(const FGenericTeamId& TeamID)
+{
+	TeamId = TeamID;
+}
+

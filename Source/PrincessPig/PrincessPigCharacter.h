@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GenericTeamAgentInterface.h"
 #include "PrincessPigCharacter.generated.h"
 
 UCLASS(Blueprintable)
-class APrincessPigCharacter : public ACharacter
+class APrincessPigCharacter : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -23,6 +24,8 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
+	/** Returns PerceptionStimuliSource subobject **/
+	FORCEINLINE class UAIPerceptionStimuliSourceComponent* GetPerceptionStimuliSource() { return PerceptionStimuliSource; }
 
 private:
 	/** Top down camera */
@@ -36,5 +39,17 @@ private:
 	/** A decal that projects to the cursor location. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
+
+	/** Perception stimuli source that allows this actor to be perceived by AI agents */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Perception, meta = (AllowPrivateAccess = "true"))
+	class UAIPerceptionStimuliSourceComponent* PerceptionStimuliSource;
+
+
+	// IGenericTeamAgentInterface
+public:
+	FGenericTeamId TeamId;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
+
 };
 

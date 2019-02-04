@@ -14,7 +14,8 @@ class PRINCESSPIG_API APrincess : public APrincessPigCharacter
 {
 	GENERATED_BODY()
 	
-	
+public:
+	APrincess();
 	
 	
 };
