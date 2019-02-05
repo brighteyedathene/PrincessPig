@@ -17,6 +17,8 @@ class UAIPerceptionComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FActorSeenDelegate, AActor*, Actor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FActorSightLostDelegate, AActor*, Actor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FActorHeardDelegate, AActor*, Actor, FName, Tag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FObjectiveChangedDelegate, EObjectiveType, OldType, EObjectiveType, NewType);
+
 
 /**
  * 
@@ -56,7 +58,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Perception")
 	void RespondToPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
 
-	// Delegate functions
+	// Delegate functions for perception
 	UPROPERTY(BlueprintAssignable, Category = "Perception")
 	FActorSeenDelegate OnActorSeen;
 
@@ -110,6 +112,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Objective")
 	void ClearObjective();
+
+	// Delegate functions for objectives
+	UPROPERTY(BlueprintAssignable, Category = "Objective")
+	FObjectiveChangedDelegate OnObjectiveChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "Objective")
+	virtual void RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType);
 
 #pragma endregion Objective
 

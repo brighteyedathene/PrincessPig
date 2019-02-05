@@ -52,7 +52,13 @@ void APrincessPigPlayerController::SetupInputComponent()
 void APrincessPigPlayerController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
-
+	
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
+	if (PPCharacter)
+	{
+		// Players should defalt to running
+		PPCharacter->SetRunning();
+	}
 }
 
 void APrincessPigPlayerController::OnMoveForward(float Value) 

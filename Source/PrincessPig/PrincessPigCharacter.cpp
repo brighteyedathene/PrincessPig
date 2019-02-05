@@ -25,6 +25,10 @@ APrincessPigCharacter::APrincessPigCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
+	WalkSpeed = 300;
+	RunSpeed = 600;
+	SetRunning();
+
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
@@ -55,6 +59,18 @@ APrincessPigCharacter::APrincessPigCharacter()
 void APrincessPigCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+}
+
+
+// Movement controls (handy functions for AI)
+void APrincessPigCharacter::SetWalking()
+{
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void APrincessPigCharacter::SetRunning()
+{
+	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
 }
 
 

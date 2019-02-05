@@ -35,8 +35,28 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Perception, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionStimuliSourceComponent* PerceptionStimuliSource;
 
-	// IGenericTeamAgentInterface
+
 public:
+	// Movement modes
+	/** Writes values to CharacterMovement */
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	virtual void SetWalking();
+
+	/** Writes values to CharacterMovement */
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	virtual void SetRunning();
+
+	/** Max speed while walking
+	* This value is written to MaxWalkSpeed in Character Movement */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float WalkSpeed;
+
+	/** Max speed while running
+	* This value is written to MaxWalkSpeed in Character Movement */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float RunSpeed;
+
+	// IGenericTeamAgentInterface
 	FGenericTeamId TeamId;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);

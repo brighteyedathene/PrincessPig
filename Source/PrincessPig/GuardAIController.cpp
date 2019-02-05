@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "GuardAIController.h"
+#include "PrincessPigCharacter.h"
 #include "Guard.h"
 #include "PatrolPoint.h"
 #include "PatrolRoute.h"
@@ -73,25 +74,32 @@ void AGuardAIController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 
-	CurrentObjective = NewObject<UObjective>();
+	// Bind the delegates
+	PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AGuardAIController::RespondToPerceptionUpdated);
+	OnActorSeen.AddDynamic(this, &AGuardAIController::RespondToActorSeen);
+	OnActorSightLost.AddDynamic(this, &AGuardAIController::RespondToActorSightLost);
+	OnActorHeard.AddDynamic(this, &AGuardAIController::RespondToActorHeard);
+	OnObjectiveChanged.AddDynamic(this, &AGuardAIController::RespondToObjectiveChanged);
 
+	// Create objective uobject
+	CurrentObjective = NewObject<UObjective>();
+	
 	AGuard* Guard = Cast<AGuard>(Pawn);
 	if (Guard)
 	{
+		// Start up blackboard and behavior tree
 		if (Guard->BehaviorTree->BlackboardAsset)
 		{
 			BlackboardComp->InitializeBlackboard(*(Guard->BehaviorTree->BlackboardAsset));
 		}
 		BehaviorTreeComp->StartTree(*Guard->BehaviorTree);
 
+		// Get this guard's team
 		SetGenericTeamId(Guard->GetGenericTeamId());
+
+		// Guards should start out walking
+		Guard->SetWalking();
 	}
-
-	PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &AGuardAIController::RespondToPerceptionUpdated);
-	OnActorSeen.AddDynamic(this, &AGuardAIController::RespondToActorSeen);
-	OnActorSightLost.AddDynamic(this, &AGuardAIController::RespondToActorSightLost);
-	OnActorHeard.AddDynamic(this, &AGuardAIController::RespondToActorHeard);
-
 }
 
 void AGuardAIController::Tick(float DeltaSeconds)
@@ -233,6 +241,10 @@ void AGuardAIController::SetNewObjective(EObjectiveType NewType, AActor* Newtarg
 	{
 		CurrentObjective = NewObject<UObjective>();
 	}
+
+	// Broadcast the objective changed event
+	OnObjectiveChanged.Broadcast(CurrentObjective->Type, NewType);
+
 	CurrentObjective->ChangeObjective(NewType, NewtargetActor);
 
 	WriteObjectiveToBlackboard();
@@ -326,10 +338,27 @@ float AGuardAIController::GetEstimatedTimeToReach(FVector Location, float MaxEst
 
 void AGuardAIController::ClearObjective()
 { 
-	if (CurrentObjective)
-		CurrentObjective->Clear();
-
-	WriteObjectiveToBlackboard();
+	SetNewObjective(EObjectiveType::None, nullptr);
 }
+
+void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("New objective: was %d, now %d"), (uint8)OldType, (uint8)NewType);
+
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		if (NewType == EObjectiveType::None)
+		{
+			PPCharacter->SetWalking();
+		}
+		else
+		{
+			PPCharacter->SetRunning();
+		}
+	}
+
+}
+
 
 #pragma endregion Objective
