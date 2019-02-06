@@ -4,18 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "PrincessPigCharacter.h"
-#include "Princess.generated.h"
+#include "Escapee.generated.h"
+
+class UBehaviorTree;
 
 /**
  * 
  */
 UCLASS()
-class PRINCESSPIG_API APrincess : public APrincessPigCharacter
+class PRINCESSPIG_API AEscapee : public APrincessPigCharacter
 {
 	GENERATED_BODY()
 	
 public:
-	APrincess();
+	AEscapee();
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+	UBehaviorTree* BehaviorTree;
 	
 	
 };

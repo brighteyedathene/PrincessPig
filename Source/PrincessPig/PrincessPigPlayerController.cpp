@@ -12,15 +12,26 @@
 APrincessPigPlayerController::APrincessPigPlayerController()
 {
 	bShowMouseCursor = false;
+
+	AvoidanceGroup.ClearAll();
+	AvoidanceGroup.SetGroup(2);
 }
 
 void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 
+	// Apply movement input
+	if (GetPawn())
+	{
+		GetPawn()->AddMovementInput(FVector::ForwardVector, ForwardInput);
+		GetPawn()->AddMovementInput(FVector::RightVector, RightInput);
 
-	// interpolate control rotation towards velocity
-	UpdateControlRotation(DeltaTime);
+		// interpolate control rotation towards the input direction added above
+		UpdateControlRotation(DeltaTime);
+	}
+
+
 }
 
 void APrincessPigPlayerController::UpdateControlRotation(float DeltaTime)
@@ -53,22 +64,17 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 	
-	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
-	if (PPCharacter)
-	{
-		// Players should defalt to running
-		PPCharacter->SetRunning();
-	}
+	Pawn->Tags.Add("Leader");
 }
 
 void APrincessPigPlayerController::OnMoveForward(float Value) 
 {
-	GetPawn()->AddMovementInput(FVector::ForwardVector, Value);
+	ForwardInput = Value;
 }
 
 void APrincessPigPlayerController::OnMoveRight(float Value) 
 {
-	GetPawn()->AddMovementInput(FVector::RightVector, Value);
+	RightInput = Value;
 }
 
 void APrincessPigPlayerController::OnUseItemPressed()

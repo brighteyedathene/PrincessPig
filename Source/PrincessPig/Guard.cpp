@@ -6,8 +6,19 @@
 
 AGuard::AGuard()
 {
-	GetCharacterMovement()->bUseRVOAvoidance = true; 
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 200.f;
+	// Configure avoidance group
+	FNavAvoidanceMask DefaultAvoidanceGroup;
+	DefaultAvoidanceGroup.ClearAll();
+	DefaultAvoidanceGroup.SetGroup(0);
+	GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
+
+	// Don't try to avoid players or escapees
+	FNavAvoidanceMask DefaultGroupsToIgnore;
+	DefaultGroupsToIgnore.SetGroup(1);
+	DefaultGroupsToIgnore.SetGroup(2);
+	GetCharacterMovement()->SetGroupsToIgnoreMask(DefaultGroupsToIgnore);
+
+	// Make the guards less agile by reducing acceleratin and friction
 	GetCharacterMovement()->bRequestedMoveUseAcceleration = true;
 	GetCharacterMovement()->GroundFriction = 3.f;
 	GetCharacterMovement()->MaxAcceleration = 400.f;

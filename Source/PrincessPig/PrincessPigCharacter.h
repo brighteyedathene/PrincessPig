@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GenericTeamAgentInterface.h"
 #include "PrincessPigCharacter.generated.h"
 
@@ -37,7 +38,17 @@ private:
 
 
 public:
-	// Movement modes
+#pragma region CollisionAvoidance
+	UFUNCTION(BlueprintCallable, Category = "CollisionAvoidance")
+	void SetCollisionAvoidanceEnabled(bool Enable);
+
+	UFUNCTION(BlueprintCallable, Category = "CollisionAvoidance")
+	void SetCollisionResponseToPawn(ECollisionResponse CollisionResponse);
+#pragma endregion CollisionAvoidance
+
+
+
+#pragma region MovementModes
 	/** Writes values to CharacterMovement */
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	virtual void SetWalking();
@@ -55,6 +66,9 @@ public:
 	* This value is written to MaxWalkSpeed in Character Movement */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float RunSpeed;
+#pragma endregion MovementModes
+
+
 
 	// IGenericTeamAgentInterface
 	FGenericTeamId TeamId;

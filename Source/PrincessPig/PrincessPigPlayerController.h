@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "PrincessPigPlayerController.generated.h"
 
 UCLASS()
@@ -20,8 +21,14 @@ public:
 	virtual void Possess(APawn* Pawn) override;
 	// End PlayerController interface
 
+	// Collision avoid setting to be applied to the controlled pawn
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CollisionAvoidance")
+	FNavAvoidanceMask AvoidanceGroup;
 
 #pragma region InputEvents
+
+	float ForwardInput;
+	float RightInput;
 
 	/** Input handlers */
 	void OnMoveForward(float Value);

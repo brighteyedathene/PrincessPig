@@ -29,6 +29,12 @@ APrincessPigCharacter::APrincessPigCharacter()
 	RunSpeed = 600;
 	SetRunning();
 
+	// Collision avoidance
+	// Set to false here so that no RPC is needed to disable it upon Player Possession
+	// (AI controllers have no problem since they run on the server)
+	GetCharacterMovement()->bUseRVOAvoidance = false;
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 200.f;
+
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
@@ -62,6 +68,22 @@ void APrincessPigCharacter::Tick(float DeltaSeconds)
 }
 
 
+
+#pragma region CollisionAvoidance
+void APrincessPigCharacter::SetCollisionAvoidanceEnabled(bool Enable)
+{
+	GetCharacterMovement()->SetAvoidanceEnabled(Enable);
+}
+
+void APrincessPigCharacter::SetCollisionResponseToPawn(ECollisionResponse CollisionResponse)
+{
+	Super::GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, CollisionResponse);
+}
+#pragma endregion CollisionAvoidance
+
+
+
+#pragma region MovementModes
 // Movement controls (handy functions for AI)
 void APrincessPigCharacter::SetWalking()
 {
@@ -72,6 +94,8 @@ void APrincessPigCharacter::SetRunning()
 {
 	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
 }
+#pragma endregion MovementModes
+
 
 
 // IGenericTeamAgentInterface

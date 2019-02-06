@@ -99,6 +99,9 @@ void AGuardAIController::Possess(APawn* Pawn)
 
 		// Guards should start out walking
 		Guard->SetWalking();
+
+		// Use collision avoidance
+		Guard->SetCollisionAvoidanceEnabled(true);
 	}
 }
 
@@ -163,7 +166,7 @@ void AGuardAIController::RespondToActorSeen(AActor* Actor)
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I see a %s"), *Actor->GetName()));
 
 	// Maybe create an objective based on this actor
-	if (Actor->ActorHasTag("Character.Princess"))
+	if (Actor->ActorHasTag("Character.Escapee"))
 	{
 		if (ShouldSetNewObjective(EObjectiveType::Chase, Actor))
 		{
@@ -199,7 +202,7 @@ void AGuardAIController::RespondToActorSightLost(AActor* Actor)
 		ClearFocus(EAIFocusPriority::Gameplay);
 
 		// we could explicitly end a chase here
-		CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+		//CurrentObjective->SetObjectiveType(EObjectiveType::Search);
 	}
 
 	// might want to check the other currently perceived actors for something better
@@ -210,7 +213,7 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I hear a %s! Sounds like a %s!"), *Actor->GetName(), *Tag.ToString()));
 
 	// Maybe create a search at this location
-	if (Actor->ActorHasTag("Character.Princess"))
+	if (Actor->ActorHasTag("Character.Escapee"))
 	{
 		if (ShouldSetNewObjective(EObjectiveType::Search, Actor))
 		{
@@ -226,9 +229,13 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 
 bool AGuardAIController::ShouldSetNewObjective(EObjectiveType NewType, AActor* NewTargetActor)
 {
+	bool NewObjectiveIsCloser = GetObjectiveDistance() > FVector::Distance(GetPawn()->GetActorLocation(), NewTargetActor->GetActorLocation());
+
 	if (!CurrentObjective ||
+		CurrentObjective->Type == EObjectiveType::None ||
 		CurrentObjective->Type == EObjectiveType::Search ||
-		GetObjectiveDistance() > FVector::Distance(GetPawn()->GetActorLocation(), NewTargetActor->GetActorLocation()))
+		(CurrentObjective->Type == EObjectiveType::Chase && !bObjectiveInSight) ||
+		(CurrentObjective->Type == EObjectiveType::Chase && NewObjectiveIsCloser))
 	{
 		return true;
 	}
