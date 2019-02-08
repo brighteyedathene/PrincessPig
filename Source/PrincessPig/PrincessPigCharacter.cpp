@@ -10,14 +10,19 @@
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Net/UnrealNetwork.h"
 
 
 #include "DrawDebugHelpers.h"
 
 APrincessPigCharacter::APrincessPigCharacter()
 {
+	// Probable already set as default in Super, but...
+	bReplicates = true;
+
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	GetCapsuleComponent()->SetIsReplicated(true);
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
 	bUseControllerRotationPitch = false;
@@ -70,15 +75,13 @@ void APrincessPigCharacter::Tick(float DeltaSeconds)
 
 
 #pragma region CollisionAvoidance
+
+// Just enables RVOA avoidance on the character movement component
 void APrincessPigCharacter::SetCollisionAvoidanceEnabled(bool Enable)
 {
 	GetCharacterMovement()->SetAvoidanceEnabled(Enable);
 }
 
-void APrincessPigCharacter::SetCollisionResponseToPawn(ECollisionResponse CollisionResponse)
-{
-	Super::GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, CollisionResponse);
-}
 #pragma endregion CollisionAvoidance
 
 
@@ -98,6 +101,7 @@ void APrincessPigCharacter::SetRunning()
 
 
 
+#pragma region Teams
 // IGenericTeamAgentInterface
 FGenericTeamId APrincessPigCharacter::GetGenericTeamId() const
 {
@@ -107,4 +111,58 @@ void APrincessPigCharacter::SetGenericTeamId(const FGenericTeamId& TeamID)
 {
 	TeamId = TeamID;
 }
+#pragma endregion Teams
+
+
+
+#pragma region RPCExamples
+
+bool APrincessPigCharacter::Server_RPCExample_Validate() { return true; }
+void APrincessPigCharacter::Server_RPCExample_Implementation()
+{
+	// As the server, call some function on all the connected clients
+	Multicast_RPCExample();
+}
+
+bool APrincessPigCharacter::Multicast_RPCExample_Validate() { return true; }
+void APrincessPigCharacter::Multicast_RPCExample_Implementation()
+{
+	// Do something on all connected clients (if server)
+}
+
+#pragma endregion RPCExamples
+
+
+
+#pragma region Replication
+
+// All the replicated variable need to be added in this function
+void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
+}
+
+/* AllowOverlapPawns
+We want to be able to set collision response for both client 
+and server whenever an allied pawn is possessed by AI so that 
+it doesn't block player movement. */
+bool APrincessPigCharacter::Server_SetAllowOverlapPawns_Validate(bool AllowOverlapPawns) { return true; }
+void APrincessPigCharacter::Server_SetAllowOverlapPawns_Implementation(bool AllowOverlapPawns)
+{
+	Replicated_AllowOverlapPawns = AllowOverlapPawns;
+	OnRep_AllowOverlapPawns();
+}
+
+void APrincessPigCharacter::OnRep_AllowOverlapPawns()
+{
+	if (Replicated_AllowOverlapPawns)
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
+	else
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Block);
+}
+
+
+#pragma endregion Replication
 

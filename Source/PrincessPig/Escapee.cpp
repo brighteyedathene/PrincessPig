@@ -2,6 +2,7 @@
 
 #include "Escapee.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 
 AEscapee::AEscapee()

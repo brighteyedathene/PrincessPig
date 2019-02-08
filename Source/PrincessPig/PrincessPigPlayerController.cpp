@@ -79,7 +79,11 @@ void APrincessPigPlayerController::OnMoveRight(float Value)
 
 void APrincessPigPlayerController::OnUseItemPressed()
 {
-
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		PPCharacter->BPEvent_PerformAction();
+	}
 }
 
 void APrincessPigPlayerController::OnUseItemReleased()

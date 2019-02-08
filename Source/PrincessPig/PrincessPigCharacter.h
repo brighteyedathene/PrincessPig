@@ -38,12 +38,12 @@ private:
 
 
 public:
+
 #pragma region CollisionAvoidance
+
 	UFUNCTION(BlueprintCallable, Category = "CollisionAvoidance")
 	void SetCollisionAvoidanceEnabled(bool Enable);
 
-	UFUNCTION(BlueprintCallable, Category = "CollisionAvoidance")
-	void SetCollisionResponseToPawn(ECollisionResponse CollisionResponse);
 #pragma endregion CollisionAvoidance
 
 
@@ -70,10 +70,47 @@ public:
 
 
 
+#pragma region Actions
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
+	void BPEvent_PerformAction();
+
+#pragma endregion Actions
+
+
+
+#pragma region Teams
 	// IGenericTeamAgentInterface
 	FGenericTeamId TeamId;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
+#pragma endregion Teams
 
+
+
+#pragma region RPCExamples
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "RPC")
+	void Server_RPCExample();
+
+	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "RPC")
+	void Multicast_RPCExample();
+
+#pragma endregion RPCExamples
+
+
+
+#pragma region Replication
+
+	UPROPERTY(ReplicatedUsing = OnRep_AllowOverlapPawns)
+	bool Replicated_AllowOverlapPawns; // Use Server_SetAllowedOverlapPawns to modify
+
+	UFUNCTION(Category = "Replication")
+	virtual void OnRep_AllowOverlapPawns();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Replication")
+	void Server_SetAllowOverlapPawns(bool AllowOverlapPawns);
+
+#pragma endregion Replication
 };
 

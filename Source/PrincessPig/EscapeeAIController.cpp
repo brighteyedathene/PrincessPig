@@ -43,9 +43,8 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 		// Enable collision avoidance
 		Escapee->SetCollisionAvoidanceEnabled(true);
 
-		// Allow overlapping with pawns - we don't want these guys getting in the way of players
-		Escapee->SetCollisionResponseToPawn(ECollisionResponse::ECR_Overlap);
-
+		// These AI guys shouldn't block player movement
+		Escapee->Server_SetAllowOverlapPawns(true);
 	}
 }
 
