@@ -52,11 +52,16 @@ void APrincessPigPlayerController::SetupInputComponent()
 	// set up gameplay key bindings
 	Super::SetupInputComponent();
 
+	InputComponent->BindAxis("MoveForward", this, &APrincessPigPlayerController::OnMoveForward);
+	InputComponent->BindAxis("MoveRight", this, &APrincessPigPlayerController::OnMoveRight);
+
+	InputComponent->BindAction("PerformAction", IE_Pressed, this, &APrincessPigPlayerController::OnPerformActionPressed);
+	InputComponent->BindAction("PerformAction", IE_Released, this, &APrincessPigPlayerController::OnPerformActionReleased);
+
 	InputComponent->BindAction("UseItem", IE_Pressed, this, &APrincessPigPlayerController::OnUseItemPressed);
 	InputComponent->BindAction("UseItem", IE_Released, this, &APrincessPigPlayerController::OnUseItemReleased);
 
-	InputComponent->BindAxis("MoveForward", this, &APrincessPigPlayerController::OnMoveForward);
-	InputComponent->BindAxis("MoveRight", this, &APrincessPigPlayerController::OnMoveRight);
+	InputComponent->BindAction("DismissFollowers", IE_Pressed, this, &APrincessPigPlayerController::OnDismissPressed);
 
 }
 
@@ -77,7 +82,7 @@ void APrincessPigPlayerController::OnMoveRight(float Value)
 	RightInput = Value;
 }
 
-void APrincessPigPlayerController::OnUseItemPressed()
+void APrincessPigPlayerController::OnPerformActionPressed()
 {
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
@@ -86,7 +91,28 @@ void APrincessPigPlayerController::OnUseItemPressed()
 	}
 }
 
-void APrincessPigPlayerController::OnUseItemReleased()
-{
+void APrincessPigPlayerController::OnPerformActionReleased()
+{}
 
+void APrincessPigPlayerController::OnUseItemPressed()
+{
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		PPCharacter->BPEvent_UseItem();
+	}
+}
+
+void APrincessPigPlayerController::OnUseItemReleased()
+{}
+
+
+void APrincessPigPlayerController::OnDismissPressed()
+{
+	GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID(), 5.f, FColor::White, FString("Dismissed!"));
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		PPCharacter->BPEvent_PerformAction();
+	}
 }

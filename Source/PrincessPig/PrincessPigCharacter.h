@@ -75,6 +75,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
 	void BPEvent_PerformAction();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
+	void BPEvent_UseItem();
+
 #pragma endregion Actions
 
 

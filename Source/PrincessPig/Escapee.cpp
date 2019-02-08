@@ -13,6 +13,10 @@ AEscapee::AEscapee()
 	DefaultAvoidanceGroup.SetGroup(1);
 	GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
 
+	// Smaller radius for escapees
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 100.f;
+
+
 	RunSpeed = 500;
 
 	SetGenericTeamId(255);

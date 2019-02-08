@@ -37,6 +37,11 @@ public:
 	void OnUseItemPressed();
 	void OnUseItemReleased();
 
+	void OnPerformActionPressed();
+	void OnPerformActionReleased();
+
+	void OnDismissPressed();
+
 #pragma endregion InputEvents
 
 
