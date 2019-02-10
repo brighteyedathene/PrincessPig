@@ -1,8 +1,11 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "PrincessPigCharacter.h"
+#include "InteractionComponent.h"
+#include "Follow.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -10,6 +13,9 @@
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AISense_Hearing.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -23,6 +29,12 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetIsReplicated(true);
+
+	// create interaction sphere
+	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>("InteractionComponent");
+	InteractionComponent->SetupAttachment(RootComponent);
+	InteractionComponent->IgnoreActorWhenMoving(this, true);
+
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
 	bUseControllerRotationPitch = false;
@@ -115,6 +127,102 @@ void APrincessPigCharacter::SetGenericTeamId(const FGenericTeamId& TeamID)
 
 
 
+#pragma region FollowAndLead
+
+void APrincessPigCharacter::BeginFollowing(APrincessPigCharacter* NewLeader)
+{
+	// Notify old leader
+	if (Leader)
+	{
+		Leader->UpdateFollowerStatus(this, false);
+	}
+
+	Leader = NewLeader;
+	
+	// Notify new leader
+	Leader->UpdateFollowerStatus(this, true);
+
+	// Set new leader in controller
+	IFollow* FollowInterface = Cast<IFollow>(GetController());
+	if (FollowInterface)
+	{
+		FollowInterface->SetLeader_Implementation(Leader);
+	}
+
+	// Begin running
+	SetRunning();
+
+}
+
+void APrincessPigCharacter::StopFollowing(APrincessPigCharacter* ThisLeader)
+{
+	// Compare current leader with supplied leader, only unfollow if they are the same
+	// OR
+	// when given nullptr, always unfollow
+	if (ThisLeader == Leader || ThisLeader == nullptr)
+	{
+		if (Leader)
+		{
+			// Notify soon-to-be ex-leader
+			Leader->UpdateFollowerStatus(this, false);
+		}
+
+		Leader = nullptr;
+
+		// Set new leader (nullptr) in controller
+		IFollow* FollowInterface = Cast<IFollow>(GetController());
+		if (FollowInterface)
+		{
+			FollowInterface->SetLeader_Implementation(nullptr);
+		}
+
+		// Set walking again
+		SetWalking();
+	}
+	else
+	{
+		// Correct the false leader's follower list
+		ThisLeader->UpdateFollowerStatus(this, false);
+	}
+}
+
+void APrincessPigCharacter::RecruitFollower(APrincessPigCharacter* NewFollower)
+{
+	if(NewFollower->bCanBecomeFollower && !Followers.Contains(NewFollower))
+		NewFollower->BeginFollowing(this);
+}
+
+void APrincessPigCharacter::DismissFollower(APrincessPigCharacter* Follower)
+{
+	Follower->StopFollowing(this);
+}
+
+bool APrincessPigCharacter::DismissAllFollowers_Validate() { return true; }
+void APrincessPigCharacter::DismissAllFollowers_Implementation()
+{
+	for (int i = Followers.Num() - 1; i >= 0; i--)
+	{
+		DismissFollower(Followers[i]);
+	}
+
+}
+
+void APrincessPigCharacter::UpdateFollowerStatus(APrincessPigCharacter* Follower, bool bIsFollowing)
+{
+	if (bIsFollowing)
+	{
+		Followers.AddUnique(Follower);
+	}
+	else
+	{
+		Followers.Remove(Follower);
+	}
+}
+
+#pragma endregion FollowAndLead
+
+
+
 #pragma region RPCExamples
 
 bool APrincessPigCharacter::Server_RPCExample_Validate() { return true; }
@@ -142,6 +250,8 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
+	DOREPLIFETIME(APrincessPigCharacter, Followers);
+	DOREPLIFETIME(APrincessPigCharacter, Leader);
 }
 
 /* AllowOverlapPawns

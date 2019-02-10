@@ -45,9 +45,23 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 
 		// These AI guys shouldn't block player movement
 		Escapee->Server_SetAllowOverlapPawns(true);
+
+		// Allow AI escapees to be lead
+		Escapee->bCanBecomeFollower = true;
 	}
 }
 
 
-
+void AEscapeeAIController::SetLeader_Implementation(APrincessPigCharacter* NewLeader)
+{
+	if (NewLeader)
+	{
+		// Write follow target to blackboard
+		BlackboardComp->SetValueAsObject(FollowTargetKey, NewLeader);
+	}
+	else
+	{
+		BlackboardComp->ClearValue(FollowTargetKey);
+	}
+}
 

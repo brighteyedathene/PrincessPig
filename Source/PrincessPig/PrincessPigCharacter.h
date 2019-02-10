@@ -16,12 +16,12 @@ class APrincessPigCharacter : public ACharacter, public IGenericTeamAgentInterfa
 public:
 	APrincessPigCharacter();
 
-	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
 
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UAIPerceptionStimuliSourceComponent* GetPerceptionStimuliSource() { return PerceptionStimuliSource; }
+	FORCEINLINE class UInteractionComponent* GetInteractionComponent() { return InteractionComponent; }
 
 private:
 	/** Top down camera */
@@ -36,8 +36,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Perception, meta = (AllowPrivateAccess = "true"))
 	class UAIPerceptionStimuliSourceComponent* PerceptionStimuliSource;
 
-
 public:
+	/** Sphere collision for detecting nearby things */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	class UInteractionComponent* InteractionComponent;
+
 
 #pragma region CollisionAvoidance
 
@@ -88,6 +91,32 @@ public:
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
 #pragma endregion Teams
+
+
+
+#pragma region FollowAndLead
+	
+	UPROPERTY(Replicated)
+	APrincessPigCharacter* Leader;
+	
+	UPROPERTY(Replicated)
+	TArray<APrincessPigCharacter*> Followers;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
+	bool bCanBecomeFollower;
+
+	virtual void BeginFollowing(APrincessPigCharacter* NewLeader);
+	virtual void StopFollowing(APrincessPigCharacter* ThisLeader = nullptr);
+
+	virtual void RecruitFollower(APrincessPigCharacter* NewFollower);
+	virtual void DismissFollower(APrincessPigCharacter* Follower);
+	
+	UFUNCTION(Server, Reliable, WithValidation)
+	virtual void DismissAllFollowers();
+
+	virtual void UpdateFollowerStatus(APrincessPigCharacter* Follower, bool bIsFollowing);
+
+#pragma endregion FollowAndLead
 
 
 

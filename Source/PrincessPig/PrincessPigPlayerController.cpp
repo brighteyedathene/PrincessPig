@@ -3,8 +3,11 @@
 #include "PrincessPigPlayerController.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "PrincessPigCharacter.h"
+#include "InteractionComponent.h"
+#include "Follow.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SphereComponent.h"
 
 
 #include "DrawDebugHelpers.h"
@@ -13,8 +16,6 @@ APrincessPigPlayerController::APrincessPigPlayerController()
 {
 	bShowMouseCursor = false;
 
-	AvoidanceGroup.ClearAll();
-	AvoidanceGroup.SetGroup(2);
 }
 
 void APrincessPigPlayerController::PlayerTick(float DeltaTime)
@@ -30,8 +31,6 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 		// interpolate control rotation towards the input direction added above
 		UpdateControlRotation(DeltaTime);
 	}
-
-
 }
 
 void APrincessPigPlayerController::UpdateControlRotation(float DeltaTime)
@@ -70,6 +69,21 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 	Super::Possess(Pawn);
 	
 	Pawn->Tags.Add("Leader");
+
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
+	if (PPCharacter)
+	{
+
+		// Bind our player controller functions to this pawn's interaction component
+		if (PPCharacter->InteractionComponent)
+		{
+			PPCharacter->InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &APrincessPigPlayerController::RespondToInteractionBeginOverlap);
+			PPCharacter->InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &APrincessPigPlayerController::RespondToInteractionEndOverlap);
+		}
+
+		// We don't want players to become followers just yet
+		PPCharacter->bCanBecomeFollower = false;
+	}
 }
 
 void APrincessPigPlayerController::OnMoveForward(float Value) 
@@ -109,10 +123,58 @@ void APrincessPigPlayerController::OnUseItemReleased()
 
 void APrincessPigPlayerController::OnDismissPressed()
 {
-	GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID(), 5.f, FColor::White, FString("Dismissed!"));
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
 	{
-		PPCharacter->BPEvent_PerformAction();
+		PPCharacter->DismissAllFollowers();
 	}
 }
+
+
+#pragma region Interaction
+
+void APrincessPigPlayerController::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Green, FString::Printf(
+	//	TEXT("Begin %s 's %s overlapped with %s 's %s"),
+	//	*GetName(),
+	//	*OverlappedComp->GetName(),
+	//	*OtherActor->GetName(),
+	//	*OtherComp->GetName()));
+
+	if (OtherActor->ActorHasTag("Character.Escapee"))
+	{
+		
+		APrincessPigCharacter* OtherPPCharacter = Cast<APrincessPigCharacter>(OtherActor);
+		APrincessPigCharacter* MyPPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+		if (OtherPPCharacter && MyPPCharacter)
+		{
+			MyPPCharacter->RecruitFollower(OtherPPCharacter);
+		}
+	}
+}
+
+
+void APrincessPigPlayerController::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Orange, FString::Printf(
+	//	TEXT("End %s 's %s overlapped with %s 's %s"),
+	//	*GetName(),
+	//	*OverlappedComp->GetName(),
+	//	*OtherActor->GetName(),
+	//	*OtherComp->GetName()));
+}
+
+
+#pragma endregion Interaction
+
+
+#pragma region Followers
+
+void APrincessPigPlayerController::SetLeader_Implementation(APrincessPigCharacter* NewLeader)
+{
+	// TODO implement player following
+}
+
+#pragma endregion Followers
+

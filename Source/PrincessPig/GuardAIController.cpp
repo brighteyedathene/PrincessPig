@@ -117,6 +117,16 @@ void AGuardAIController::Tick(float DeltaSeconds)
 		WriteObjectiveToBlackboard();
 	}
 
+	TArray<AActor*> Actors;
+	GetPerceptionComponent()->GetKnownPerceivedActors(nullptr, Actors);
+	for (auto & Actor : Actors)
+	{
+		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Actor->GetActorLocation(), FColor::Red, false, 0, 0, 3.f);
+	}
+	if (CurrentObjective && CurrentObjective->TargetActor)
+	{
+		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), CurrentObjective->TargetActor->GetActorLocation(), FColor::Orange, false, 0, 0, 5.f);
+	}
 }
 
 #pragma region Perception

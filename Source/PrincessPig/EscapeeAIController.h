@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Follow.h"
 #include "EscapeeAIController.generated.h"
 
 
@@ -14,7 +15,7 @@ class UBlackboardComponent;
  * 
  */
 UCLASS()
-class PRINCESSPIG_API AEscapeeAIController : public AAIController
+class PRINCESSPIG_API AEscapeeAIController : public AAIController, public IFollow
 {
 	GENERATED_BODY()
 
@@ -27,10 +28,20 @@ public:
 	UBlackboardComponent* BlackboardComp;
 	FORCEINLINE UBlackboardComponent* GetBlackboardComp() const { return BlackboardComp; };
 
+#pragma region Follow
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Follow")
+	void SetLeader(APrincessPigCharacter* NewLeader);
+	virtual void SetLeader_Implementation(APrincessPigCharacter* NewLeader) override;
+
+#pragma endregion Follow
+
+
+#pragma region BlackboardKeys
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName FollowTargetKey;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName LocationToGoKey;
-
+#pragma endregion BlackboardKeys
 };
