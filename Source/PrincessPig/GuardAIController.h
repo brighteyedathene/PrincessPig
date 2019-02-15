@@ -166,12 +166,6 @@ public:
 	FName TargetActorKey;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
-	FName TargetLastKnownLocationKey;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
-	FName TargetLastKnownVelocityKey;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName ObjectiveTypeKey;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")

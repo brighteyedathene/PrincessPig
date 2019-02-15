@@ -36,7 +36,7 @@ AGuardAIController::AGuardAIController()
 	{
 		// Sight configuration
 		SightConfig->SetMaxAge(1.f);
-		SightConfig->SightRadius = 1000;
+		SightConfig->SightRadius = 1200;
 		SightConfig->LoseSightRadius = 1500;
 		SightConfig->PeripheralVisionAngleDegrees = 60.0f;
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -51,7 +51,7 @@ AGuardAIController::AGuardAIController()
 	{
 		// Hearing configuration
 		HearingConfig->SetMaxAge(0.01f);
-		HearingConfig->HearingRange = 1000;
+		HearingConfig->HearingRange = 1200;
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
 		HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -66,8 +66,6 @@ AGuardAIController::AGuardAIController()
 	TimerKey = "Timer";
 	TimestampKey = "Timestamp";
 	TargetActorKey = "TargetActor";
-	TargetLastKnownLocationKey = "TargetLastKnownLocation";
-	TargetLastKnownVelocityKey = "TargetLastKnownVelocity";
 	ObjectiveTypeKey = "ObjectiveType";
 	ObjectiveLocationKey = "ObjectiveLocation";
 }
