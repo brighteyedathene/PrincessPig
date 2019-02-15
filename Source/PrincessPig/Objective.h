@@ -59,4 +59,8 @@ public:
 	// Reset objective to initial state
 	UFUNCTION(BlueprintCallable, Category = "Objective")
 	void Clear();
+	
+	UFUNCTION(BlueprintCallable, Category = "Objective")
+	bool RequiresInteraction();
+
 };

@@ -20,10 +20,11 @@ AGuard::AGuard()
 
 	// Make the guards less agile by reducing acceleratin and friction
 	GetCharacterMovement()->bRequestedMoveUseAcceleration = true;
+	//GetCharacterMovement()->bUseAccelerationForPaths = true; must set this in blueprint!
 	GetCharacterMovement()->GroundFriction = 3.f;
 	GetCharacterMovement()->MaxAcceleration = 400.f;
-
-	RunSpeed = 610.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 800.f;
+	RunSpeed = 680.f;
 
 	SetGenericTeamId(FGenericTeamId(1));
 	Tags.AddUnique(FName("Character.Guard"));

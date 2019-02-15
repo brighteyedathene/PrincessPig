@@ -61,3 +61,9 @@ void UObjective::Clear()
 	LastKnownLocation = FVector::ZeroVector;
 	LastKnownVelocity = FVector::ZeroVector;
 }
+
+bool UObjective::RequiresInteraction()
+{
+	return (Type == EObjectiveType::Distraction) ||
+		(Type == EObjectiveType::Chase);
+}

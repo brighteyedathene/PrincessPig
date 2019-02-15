@@ -27,5 +27,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	APatrolRoute* PatrolRoute;
 
-	
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
+		void BPEvent_ObjectiveReached();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
+		void BPEvent_Subdue();
 };

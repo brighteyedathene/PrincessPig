@@ -15,7 +15,8 @@ EBTNodeResult::Type UBTT_SetNextPatrolPoint::ExecuteTask(UBehaviorTreeComponent&
 
 	if (Guard && GuardAI)
 	{
-		if (Guard->PatrolRoute->PatrolPoints.Num() > 0)
+		if (Guard->PatrolRoute &&
+			Guard->PatrolRoute->PatrolPoints.Num() > 0)
 		{
 			UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
 			int CurrentIndex = BlackboardComp->GetValueAsInt(GuardAI->PatrolIndexKey);

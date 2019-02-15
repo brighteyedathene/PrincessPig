@@ -52,6 +52,10 @@ public:
 
 
 #pragma region MovementModes
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+	bool IsAcceptingPlayerInput();
+
 	/** Writes values to CharacterMovement */
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	virtual void SetWalking();
@@ -75,13 +79,48 @@ public:
 
 #pragma region Actions
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
 	void BPEvent_PerformAction();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
 	void BPEvent_UseItem();
 
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
+	void BPEvent_Interact(AActor* InteractTarget);
+
 #pragma endregion Actions
+
+
+
+#pragma region Subdue
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Subdue")
+		bool IsSubdued() { return Replicated_IsSubdued;	 }
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsSubdued)
+		bool Replicated_IsSubdued;
+
+	FTimerHandle SubdueTimer;
+
+	UFUNCTION(Category = "Replication")
+		virtual void OnRep_IsSubdued();
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Subdue")
+		void Server_SetSubduedDirectly(bool Subdued); 
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Subdue")
+		void Server_SetSubduedFor(float Duration);
+
+	UFUNCTION()
+		void OnSubdueTimerExpired();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Subdue")
+		void BPEvent_OnBeginSubdued();
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Subdue")
+		void BPEvent_OnEndSubdued();
+
+#pragma endregion Subdue
 
 
 

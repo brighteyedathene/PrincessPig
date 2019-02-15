@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -33,6 +34,7 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// create interaction sphere
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>("InteractionComponent");
 	InteractionComponent->SetupAttachment(RootComponent);
+	InteractionComponent->SetRelativeLocation(FVector(70, 0, 0));
 	InteractionComponent->IgnoreActorWhenMoving(this, true);
 
 
@@ -82,6 +84,21 @@ APrincessPigCharacter::APrincessPigCharacter()
 void APrincessPigCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+
+	FString AuthString = HasAuthority() ? FString("Auth  ") : FString("Remote   ");
+	if (IsAcceptingPlayerInput())
+	{
+		FColor Color = HasAuthority() ? FColor::Cyan : FColor::Yellow;
+
+		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + 991, 0.3, Color, AuthString + GetName() + FString("  is accepting input"));
+	}
+	else
+	{
+		FColor Color = HasAuthority() ? FColor::Blue : FColor::Orange;
+
+		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + 991, 0.3, Color, AuthString + GetName() + FString("  is NOT accepting input"));
+
+	}
 }
 
 
@@ -99,7 +116,12 @@ void APrincessPigCharacter::SetCollisionAvoidanceEnabled(bool Enable)
 
 
 #pragma region MovementModes
-// Movement controls (handy functions for AI)
+
+bool APrincessPigCharacter::IsAcceptingPlayerInput()
+{
+	return !Replicated_IsSubdued;
+}
+
 void APrincessPigCharacter::SetWalking()
 {
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
@@ -110,6 +132,45 @@ void APrincessPigCharacter::SetRunning()
 	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
 }
 #pragma endregion MovementModes
+
+
+
+#pragma region Subdue
+
+bool APrincessPigCharacter::Server_SetSubduedDirectly_Validate(bool Subdued) { return true; }
+void APrincessPigCharacter::Server_SetSubduedDirectly_Implementation(bool Subdued)
+{
+	GetWorld()->GetTimerManager().ClearTimer(SubdueTimer);
+	Replicated_IsSubdued = Subdued;
+	OnRep_IsSubdued();
+}
+
+bool APrincessPigCharacter::Server_SetSubduedFor_Validate(float Duration) { return Duration > 0; }
+void APrincessPigCharacter::Server_SetSubduedFor_Implementation(float Duration)
+{
+	GetWorld()->GetTimerManager().SetTimer(SubdueTimer, this, &APrincessPigCharacter::OnSubdueTimerExpired, Duration);
+	Replicated_IsSubdued = true;
+	OnRep_IsSubdued();
+}
+
+void APrincessPigCharacter::OnRep_IsSubdued()
+{
+	if (Replicated_IsSubdued)
+	{
+		BPEvent_OnBeginSubdued();
+	}
+	else
+	{
+		BPEvent_OnEndSubdued();
+	}
+}
+
+void APrincessPigCharacter::OnSubdueTimerExpired()
+{
+	Replicated_IsSubdued = false;
+}
+
+#pragma endregion Subdue
 
 
 
@@ -249,6 +310,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
 	DOREPLIFETIME(APrincessPigCharacter, Followers);
 	DOREPLIFETIME(APrincessPigCharacter, Leader);

@@ -77,6 +77,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Perception")
 	virtual void RespondToActorHeard(AActor* Actor, FName Tag);
 
+	UFUNCTION(BlueprintCallable, Category = "Perception")
+	virtual void CheckCurrentLineOfSight();
 
 #pragma endregion Perception
 
@@ -87,6 +89,9 @@ public:
 
 	UPROPERTY(Transient, BlueprintReadWrite, Category = "Objective")
 	bool bObjectiveInSight;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "Objective")
+	FVector PursuitLocation;
 
 	/* Discard CurrentObjective in favour of a new objective, or vice-versa
 	* Some AI controllers might want to use their own criteria for judging 
@@ -123,6 +128,24 @@ public:
 #pragma endregion Objective
 
 
+#pragma region Interaction
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "Interaction")
+	TArray<AActor*> AvailableInteractions;
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	bool IsObjectiveInteractionAvailable();
+
+	UFUNCTION()
+	void RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+#pragma endregion Interaction
+
+
+
 #pragma region BlackboardKeys
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName PatrolPointKey;
@@ -135,6 +158,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName TimerKey;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
+	FName TimestampKey;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI")
 	FName TargetActorKey;
@@ -152,4 +178,7 @@ public:
 	FName ObjectiveLocationKey;
 
 #pragma endregion BlackboardKeys
+
+
+	void DebugShowObjective();
 };

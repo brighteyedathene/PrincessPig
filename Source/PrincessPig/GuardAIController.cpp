@@ -6,6 +6,7 @@
 #include "PatrolPoint.h"
 #include "PatrolRoute.h"
 #include "Objective.h"
+#include "InteractionComponent.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
@@ -49,7 +50,7 @@ AGuardAIController::AGuardAIController()
 	if (HearingConfig)
 	{
 		// Hearing configuration
-		HearingConfig->SetMaxAge(1.f);
+		HearingConfig->SetMaxAge(0.01f);
 		HearingConfig->HearingRange = 1000;
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
 		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
@@ -63,6 +64,7 @@ AGuardAIController::AGuardAIController()
 	PatrolPointLookTargetKey = "PatrolPointLookTarget";
 	PatrolIndexKey = "PatrolIndex";
 	TimerKey = "Timer";
+	TimestampKey = "Timestamp";
 	TargetActorKey = "TargetActor";
 	TargetLastKnownLocationKey = "TargetLastKnownLocation";
 	TargetLastKnownVelocityKey = "TargetLastKnownVelocity";
@@ -102,30 +104,46 @@ void AGuardAIController::Possess(APawn* Pawn)
 
 		// Use collision avoidance
 		Guard->SetCollisionAvoidanceEnabled(true);
+
+		// Bind response functions to this pawn's interaction component overlap events
+		if (Guard->InteractionComponent)
+		{
+			Guard->InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGuardAIController::RespondToInteractionBeginOverlap);
+			Guard->InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &AGuardAIController::RespondToInteractionEndOverlap);
+		}
 	}
 }
 
 void AGuardAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	if (CurrentObjective && bObjectiveInSight)
+	
+	// Some objectives (like Chase) require constant updates
+	if (CurrentObjective)
 	{
-		CurrentObjective->Refresh();
+		// Refresh the pursuit location
+		if (bObjectiveInSight)
+		{
+			CurrentObjective->Refresh();
+			PursuitLocation = GetObjectivePursuitLocation();
+		}
 
-		// Write new values to blackboard
-		WriteObjectiveToBlackboard();
+		if(CurrentObjective->RequiresInteraction())
+		{
+			if (CurrentObjective->TargetActor->IsPendingKillPending())
+			{
+				// Actor not there anymore? Demote to search and check line of sight for something else to do
+				CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+				CheckCurrentLineOfSight();
+			}
+		}
 	}
 
-	TArray<AActor*> Actors;
-	GetPerceptionComponent()->GetKnownPerceivedActors(nullptr, Actors);
-	for (auto & Actor : Actors)
+	DebugShowObjective();
+
+	for (auto & InteractionActor : AvailableInteractions)
 	{
-		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Actor->GetActorLocation(), FColor::Red, false, 0, 0, 3.f);
-	}
-	if (CurrentObjective && CurrentObjective->TargetActor)
-	{
-		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), CurrentObjective->TargetActor->GetActorLocation(), FColor::Orange, false, 0, 0, 5.f);
+		GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + InteractionActor->GetUniqueID(), 0.2, FColor::Cyan, InteractionActor->GetName());
 	}
 }
 
@@ -211,11 +229,10 @@ void AGuardAIController::RespondToActorSightLost(AActor* Actor)
 		bObjectiveInSight = false;
 		ClearFocus(EAIFocusPriority::Gameplay);
 
-		// we could explicitly end a chase here
-		//CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+		// might want to check the other currently perceived actors for something better
+		CheckCurrentLineOfSight();
 	}
 
-	// might want to check the other currently perceived actors for something better
 }
 
 void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
@@ -233,21 +250,53 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 
 }
 
+
+void AGuardAIController::CheckCurrentLineOfSight()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("CHECKING MY PERCEPTS"));
+
+
+	TArray<AActor*> PerceivedActors;
+	GetPerceptionComponent()->GetCurrentlyPerceivedActors(nullptr, PerceivedActors);
+	for (auto & Actor : PerceivedActors)
+	{
+		FActorPerceptionBlueprintInfo PerceptionInfo;
+		GetPerceptionComponent()->GetActorsPerception(Actor, PerceptionInfo);
+		for (auto & Stimulus : PerceptionInfo.LastSensedStimuli)
+		{
+			if (!Stimulus.IsValid() ||
+				!Stimulus.IsActive() ||
+				Stimulus.IsExpired() )
+				continue;
+
+			if (Stimulus.Type.Index == 0) // 0 refers to sight
+			{ 
+				OnActorSeen.Broadcast(Actor);
+			}
+		}
+	}
+}
+
 #pragma endregion Perception
 
 #pragma region Objective
 
 bool AGuardAIController::ShouldSetNewObjective(EObjectiveType NewType, AActor* NewTargetActor)
 {
-	bool NewObjectiveIsCloser = GetObjectiveDistance() > FVector::Distance(GetPawn()->GetActorLocation(), NewTargetActor->GetActorLocation());
-
-	if (!CurrentObjective ||
-		CurrentObjective->Type == EObjectiveType::None ||
-		CurrentObjective->Type == EObjectiveType::Search ||
-		(CurrentObjective->Type == EObjectiveType::Chase && !bObjectiveInSight) ||
-		(CurrentObjective->Type == EObjectiveType::Chase && NewObjectiveIsCloser))
+	if (NewTargetActor)
 	{
-		return true;
+		bool NewObjectiveIsCloser = GetObjectiveDistance() > FVector::Distance(GetPawn()->GetActorLocation(), NewTargetActor->GetActorLocation());
+
+		if (!CurrentObjective ||
+			!CurrentObjective->TargetActor ||
+			CurrentObjective->Type == EObjectiveType::None ||
+			CurrentObjective->Type == EObjectiveType::Search ||
+			(CurrentObjective->Type == EObjectiveType::Chase && NewObjectiveIsCloser) ||
+			(CurrentObjective->Type == EObjectiveType::Distraction && NewObjectiveIsCloser) ||
+			(!(bObjectiveInSight || IsObjectiveInteractionAvailable())))
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -290,8 +339,7 @@ void AGuardAIController::WriteObjectiveToBlackboard()
 		// Write objective location
 		if (CurrentObjective->Type == EObjectiveType::Chase)
 		{
-			// if chasing, pursue the target
-			FVector PursuitLocation = GetObjectivePursuitLocation();
+			// if chasing, use the pursuit location
 			GetBlackboardComp()->SetValueAsVector(ObjectiveLocationKey, PursuitLocation);
 		}
 		else
@@ -302,6 +350,10 @@ void AGuardAIController::WriteObjectiveToBlackboard()
 
 		// Write objective type
 		GetBlackboardComp()->SetValueAsEnum(ObjectiveTypeKey, (uint8)CurrentObjective->Type);
+
+		// Write objective target actor
+		GetBlackboardComp()->SetValueAsObject(TargetActorKey, CurrentObjective->TargetActor);
+
 	}
 }
 
@@ -321,8 +373,10 @@ FVector AGuardAIController::GetObjectivePursuitLocation()
 			NaivePredictedLocation,
 			ECollisionChannel::ECC_Visibility))
 		{
-			DrawDebugSphere(GetWorld(), Hit.ImpactPoint, 20, 3, FColor::Magenta, true, 0.1, 1, 4.f);
-			return Hit.ImpactPoint;
+			DrawDebugSphere(GetWorld(), Hit.ImpactPoint + Hit.ImpactNormal * 20.f, 20, 3, FColor::Magenta, true, 0.1, 1, 4.f);
+			// we have a hit! place the point a little bit back though
+			float SafetyBufferDistance = 20.f;
+			return Hit.ImpactPoint + Hit.ImpactNormal * SafetyBufferDistance;
 		}
 		else
 		{
@@ -379,3 +433,100 @@ void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObje
 
 
 #pragma endregion Objective
+
+
+
+#pragma region Interaction
+
+bool AGuardAIController::IsObjectiveInteractionAvailable()
+{
+	if (CurrentObjective && CurrentObjective->TargetActor)
+	{
+		return AvailableInteractions.Contains(CurrentObjective->TargetActor);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+void AGuardAIController::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AvailableInteractions.Add(OtherActor);
+
+	if (CurrentObjective && OtherActor == CurrentObjective->TargetActor)
+	{
+		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Green, FString::Printf(
+		//	TEXT("Begin %s 's %s overlapped with %s 's %s"),
+		//	*GetName(),
+		//	*OverlappedComp->GetName(),
+		//	*OtherActor->GetName(),
+		//	*OtherComp->GetName()));
+
+		AGuard* Guard = Cast<AGuard>(GetPawn());
+		if (Guard)
+		{
+			// Call the BPEvent
+			Guard->BPEvent_ObjectiveReached();
+		}
+
+	}
+}
+
+
+void AGuardAIController::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	AvailableInteractions.Remove(OtherActor);
+	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Orange, FString::Printf(
+	//	TEXT("End %s 's %s overlapped with %s 's %s"),
+	//	*GetName(),
+	//	*OverlappedComp->GetName(),
+	//	*OtherActor->GetName(),
+	//	*OtherComp->GetName()));
+
+
+	if (CurrentObjective && OtherActor == CurrentObjective->TargetActor)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("My objective got away!!!"));
+		//CheckCurrentPercepts();
+	}
+}
+
+
+#pragma endregion Interaction
+
+
+void AGuardAIController::DebugShowObjective()
+{
+	if (CurrentObjective && CurrentObjective->TargetActor)
+	{
+		FString ObjectiveTypeString;
+		FColor Color;
+		switch (CurrentObjective->Type)
+		{
+		case EObjectiveType::Search:
+			ObjectiveTypeString = FString("  Search  "); 
+			Color = FColor::Yellow;
+			break;
+		case EObjectiveType::Chase:
+			ObjectiveTypeString = FString("  Chase  "); 
+			Color = FColor::Orange;
+			break;
+		case EObjectiveType::Distraction:
+			ObjectiveTypeString = FString("  Distraction  "); 
+			Color = FColor::Cyan;
+			break;
+		default:
+			ObjectiveTypeString = FString("  None  "); 
+			Color = FColor::White;
+			break;
+		}
+
+		GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID(), 0.2, Color, GetName() + ObjectiveTypeString + CurrentObjective->TargetActor->GetName());
+		FVector Destinaction = BlackboardComp->GetValueAsVector(ObjectiveLocationKey);
+		DrawDebugLine(GetWorld(), GetPawn()->GetActorLocation(), Destinaction, Color, false, 0, 0, 8.f);
+		DrawDebugSphere(GetWorld(), CurrentObjective->TargetActor->GetActorLocation() + FVector(0, 0, 1) * 100, 25.f, 3, Color, false, 0, 0, 5.f);
+	}
+}
+
