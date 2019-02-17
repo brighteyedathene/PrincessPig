@@ -67,6 +67,7 @@ APrincessPigCharacter::APrincessPigCharacter()
 	CameraBoom->TargetArmLength = 1800.f;
 	CameraBoom->RelativeRotation = FRotator(-65.f, 0.f, 0.f);
 	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
+	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->SetupAttachment(RootComponent);
 
 	// Create top-down camera
