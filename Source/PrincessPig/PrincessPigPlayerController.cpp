@@ -37,9 +37,13 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 	}
 
 	// Print the current interaction
-	if (GetHighestPriorityInteraction())
+	if (IsLocalController())
 	{
-		GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID(), 0.1f, FColor::Cyan, FString("(E) ") + GetHighestPriorityInteraction()->GetName());
+		if (GetHighestPriorityInteraction())
+		{
+			GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID(), 0.1f, FColor::Cyan, FString("(E) ") + GetHighestPriorityInteraction()->GetName());
+			DrawDebugDirectionalArrow(GetWorld(), GetPawn()->GetActorLocation(), GetHighestPriorityInteraction()->GetActorLocation(), 1000, FColor::Cyan, false, 0, 0, 6.f);
+		}
 	}
 }
 
@@ -86,14 +90,6 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
 	if (PPCharacter)
 	{
-
-		// Bind our player controller functions to this pawn's interaction component
-		if (PPCharacter->InteractionComponent)
-		{
-			PPCharacter->InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &APrincessPigPlayerController::RespondToInteractionBeginOverlap);
-			PPCharacter->InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &APrincessPigPlayerController::RespondToInteractionEndOverlap);
-		}
-
 		// We don't want players to become followers just yet
 		PPCharacter->bCanBecomeFollower = false;
 	}
@@ -159,49 +155,53 @@ void APrincessPigPlayerController::OnDismissPressed()
 
 AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 {
-	// just return the first one for now
-	if (AvailableInteractions.Num() > 0)
-		return AvailableInteractions[0];
-	else
-		return nullptr;
-}
+	/* Priority ranking */
+	const float PickupPriority = 5.f;
+	const float EscapeePriority = 2.f;
+	const float FollowerEscapeePriority = 1.f;
 
-void APrincessPigPlayerController::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Green, FString::Printf(
-	//	TEXT("Begin %s 's %s overlapped with %s 's %s"),
-	//	*GetName(),
-	//	*OverlappedComp->GetName(),
-	//	*OtherActor->GetName(),
-	//	*OtherComp->GetName()));
-
-	AvailableInteractions.Add(OtherActor);
-
-
-	if (OtherActor->ActorHasTag("Character.Escapee"))
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
 	{
-		
-		APrincessPigCharacter* OtherPPCharacter = Cast<APrincessPigCharacter>(OtherActor);
-		APrincessPigCharacter* MyPPCharacter = Cast<APrincessPigCharacter>(GetPawn());
-		if (OtherPPCharacter && MyPPCharacter)
+		AActor * HighestPriorityActor = nullptr;
+		float HighestPriority = 0;
+		for (auto & Actor : PPCharacter->AvailableInteractions)
 		{
-			MyPPCharacter->RecruitFollower(OtherPPCharacter);
+			if (!Actor)
+				continue;
+
+			if (Actor->ActorHasTag("Pickup") && HighestPriority < PickupPriority)
+			{
+				HighestPriorityActor = Actor;
+				HighestPriority = PickupPriority;
+			}
+
+			if (Actor->ActorHasTag("Character.Escapee"))
+			{
+				APrincessPigCharacter* Escapee = Cast<APrincessPigCharacter>(Actor);
+				if (PPCharacter->Followers.Contains(Escapee))
+				{
+					if (HighestPriority < FollowerEscapeePriority)
+					{
+						HighestPriorityActor = Actor;
+						HighestPriority = FollowerEscapeePriority;
+					}
+				}
+				else
+				{
+					if (HighestPriority < EscapeePriority)
+					{
+						HighestPriorityActor = Actor;
+						HighestPriority = EscapeePriority;
+					}
+				}
+			}
 		}
+		return HighestPriorityActor;
+
 	}
+	return nullptr;
 }
-
-
-void APrincessPigPlayerController::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	AvailableInteractions.Remove(OtherActor);
-	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Orange, FString::Printf(
-	//	TEXT("End %s 's %s overlapped with %s 's %s"),
-	//	*GetName(),
-	//	*OverlappedComp->GetName(),
-	//	*OtherActor->GetName(),
-	//	*OtherComp->GetName()));
-}
-
 
 #pragma endregion Interaction
 

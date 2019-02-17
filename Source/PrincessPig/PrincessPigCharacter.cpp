@@ -36,7 +36,8 @@ APrincessPigCharacter::APrincessPigCharacter()
 	InteractionComponent->SetupAttachment(RootComponent);
 	InteractionComponent->SetRelativeLocation(FVector(70, 0, 0));
 	InteractionComponent->IgnoreActorWhenMoving(this, true);
-
+	InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &APrincessPigCharacter::RespondToInteractionBeginOverlap);
+	InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &APrincessPigCharacter::RespondToInteractionEndOverlap);
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
 	bUseControllerRotationPitch = false;
@@ -84,21 +85,6 @@ APrincessPigCharacter::APrincessPigCharacter()
 void APrincessPigCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-
-	FString AuthString = HasAuthority() ? FString("Auth  ") : FString("Remote   ");
-	if (IsAcceptingPlayerInput())
-	{
-		FColor Color = HasAuthority() ? FColor::Cyan : FColor::Yellow;
-
-		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + 991, 0.3, Color, AuthString + GetName() + FString("  is accepting input"));
-	}
-	else
-	{
-		FColor Color = HasAuthority() ? FColor::Blue : FColor::Orange;
-
-		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + 991, 0.3, Color, AuthString + GetName() + FString("  is NOT accepting input"));
-
-	}
 }
 
 
@@ -171,6 +157,37 @@ void APrincessPigCharacter::OnSubdueTimerExpired()
 }
 
 #pragma endregion Subdue
+
+
+
+void APrincessPigCharacter::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(HasAuthority())
+	{
+		if (OtherActor != this)
+		{
+			AvailableInteractions.Add(OtherActor);
+		}
+
+	}
+}
+
+
+void APrincessPigCharacter::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (HasAuthority())
+	{
+		if (OtherActor != this)
+		{
+			AvailableInteractions.Remove(OtherActor);
+		}
+
+	}
+}
+
+
+#pragma endregion Interaction
+
 
 
 
@@ -312,6 +329,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
+	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);
 	DOREPLIFETIME(APrincessPigCharacter, Followers);
 	DOREPLIFETIME(APrincessPigCharacter, Leader);
 }

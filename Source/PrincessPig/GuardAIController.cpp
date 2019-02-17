@@ -103,12 +103,6 @@ void AGuardAIController::Possess(APawn* Pawn)
 		// Use collision avoidance
 		Guard->SetCollisionAvoidanceEnabled(true);
 
-		// Bind response functions to this pawn's interaction component overlap events
-		if (Guard->InteractionComponent)
-		{
-			Guard->InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGuardAIController::RespondToInteractionBeginOverlap);
-			Guard->InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &AGuardAIController::RespondToInteractionEndOverlap);
-		}
 	}
 }
 
@@ -139,10 +133,6 @@ void AGuardAIController::Tick(float DeltaSeconds)
 
 	DebugShowObjective();
 
-	for (auto & InteractionActor : AvailableInteractions)
-	{
-		GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + InteractionActor->GetUniqueID(), 0.2, FColor::Cyan, InteractionActor->GetName());
-	}
 }
 
 #pragma region Perception
@@ -189,7 +179,7 @@ void AGuardAIController::RespondToPerceptionUpdated(const TArray<AActor*>& Updat
 
 void AGuardAIController::RespondToActorSeen(AActor* Actor)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I see a %s"), *Actor->GetName()));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I see a %s"), *Actor->GetName()));
 
 	// Maybe create an objective based on this actor
 	if (Actor->ActorHasTag("Character.Escapee"))
@@ -218,7 +208,7 @@ void AGuardAIController::RespondToActorSeen(AActor* Actor)
 
 void AGuardAIController::RespondToActorSightLost(AActor* Actor)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I can't see %s anymore..."), *Actor->GetName()));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I can't see %s anymore..."), *Actor->GetName()));
 
 	// if this actor is the current objective target, maybe downgrade to search
 	if (CurrentObjective && Actor == CurrentObjective->TargetActor)
@@ -235,7 +225,7 @@ void AGuardAIController::RespondToActorSightLost(AActor* Actor)
 
 void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I hear a %s! Sounds like a %s!"), *Actor->GetName(), *Tag.ToString()));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I hear a %s! Sounds like a %s!"), *Actor->GetName(), *Tag.ToString()));
 
 	// Maybe create a search at this location
 	if (Actor->ActorHasTag("Character.Escapee"))
@@ -251,9 +241,6 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 
 void AGuardAIController::CheckCurrentLineOfSight()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("CHECKING MY PERCEPTS"));
-
-
 	TArray<AActor*> PerceivedActors;
 	GetPerceptionComponent()->GetCurrentlyPerceivedActors(nullptr, PerceivedActors);
 	for (auto & Actor : PerceivedActors)
@@ -371,14 +358,12 @@ FVector AGuardAIController::GetObjectivePursuitLocation()
 			NaivePredictedLocation,
 			ECollisionChannel::ECC_Visibility))
 		{
-			DrawDebugSphere(GetWorld(), Hit.ImpactPoint + Hit.ImpactNormal * 20.f, 20, 3, FColor::Magenta, true, 0.1, 1, 4.f);
 			// we have a hit! place the point a little bit back though
 			float SafetyBufferDistance = 20.f;
 			return Hit.ImpactPoint + Hit.ImpactNormal * SafetyBufferDistance;
 		}
 		else
 		{
-			DrawDebugSphere(GetWorld(), NaivePredictedLocation, 20, 3, FColor::Orange, true, 0.1, 1, 4.f);
 			return NaivePredictedLocation;
 		}
 	}
@@ -438,59 +423,17 @@ void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObje
 
 bool AGuardAIController::IsObjectiveInteractionAvailable()
 {
-	if (CurrentObjective && CurrentObjective->TargetActor)
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
 	{
-		return AvailableInteractions.Contains(CurrentObjective->TargetActor);
-	}
-	else
-	{
-		return false;
-	}
-}
-
-
-void AGuardAIController::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	AvailableInteractions.Add(OtherActor);
-
-	if (CurrentObjective && OtherActor == CurrentObjective->TargetActor)
-	{
-		//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Green, FString::Printf(
-		//	TEXT("Begin %s 's %s overlapped with %s 's %s"),
-		//	*GetName(),
-		//	*OverlappedComp->GetName(),
-		//	*OtherActor->GetName(),
-		//	*OtherComp->GetName()));
-
-		AGuard* Guard = Cast<AGuard>(GetPawn());
-		if (Guard)
+		if (CurrentObjective && CurrentObjective->TargetActor)
 		{
-			// Call the BPEvent
-			Guard->BPEvent_ObjectiveReached();
+			return PPCharacter->AvailableInteractions.Contains(CurrentObjective->TargetActor);
 		}
-
 	}
+	return false;
+	
 }
-
-
-void AGuardAIController::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	AvailableInteractions.Remove(OtherActor);
-	//GEngine->AddOnScreenDebugMessage((uint64)GetUniqueID() + OtherComp->GetUniqueID(), 15.f, FColor::Orange, FString::Printf(
-	//	TEXT("End %s 's %s overlapped with %s 's %s"),
-	//	*GetName(),
-	//	*OverlappedComp->GetName(),
-	//	*OtherActor->GetName(),
-	//	*OtherComp->GetName()));
-
-
-	if (CurrentObjective && OtherActor == CurrentObjective->TargetActor)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("My objective got away!!!"));
-		//CheckCurrentPercepts();
-	}
-}
-
 
 #pragma endregion Interaction
 

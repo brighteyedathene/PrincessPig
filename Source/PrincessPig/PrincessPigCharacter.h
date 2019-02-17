@@ -124,6 +124,25 @@ public:
 
 
 
+#pragma region Interaction
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
+	TArray<AActor*> AvailableInteractions;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
+	AActor* HighestPriorityInteraction;
+
+	UFUNCTION()
+	void RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+
+#pragma endregion Interaction
+
+
+
 #pragma region Teams
 	// IGenericTeamAgentInterface
 	FGenericTeamId TeamId;
@@ -143,11 +162,15 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
 	bool bCanBecomeFollower;
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Follow")
 	virtual void BeginFollowing(APrincessPigCharacter* NewLeader);
+	UFUNCTION(BlueprintCallable, Category = "Follow")
 	virtual void StopFollowing(APrincessPigCharacter* ThisLeader = nullptr);
 
+	UFUNCTION(BlueprintCallable, Category = "Follow")
 	virtual void RecruitFollower(APrincessPigCharacter* NewFollower);
+	UFUNCTION(BlueprintCallable, Category = "Follow")
 	virtual void DismissFollower(APrincessPigCharacter* Follower);
 	
 	UFUNCTION(Server, Reliable, WithValidation)

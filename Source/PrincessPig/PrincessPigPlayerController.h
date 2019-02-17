@@ -57,13 +57,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	AActor* GetHighestPriorityInteraction();
 
-	UFUNCTION()
-	void RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	
-	UFUNCTION()
-	void RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-
 #pragma endregion Interaction
 
 

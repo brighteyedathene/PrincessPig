@@ -10,6 +10,7 @@ void UBTService_UpdateObjective::TickNode(UBehaviorTreeComponent & OwnerComp, ui
 	if (GuardAI)
 	{
 		GuardAI->WriteObjectiveToBlackboard();
+		GuardAI->CheckCurrentLineOfSight();
 	}
 }
 
