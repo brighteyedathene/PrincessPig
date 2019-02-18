@@ -158,6 +158,7 @@ AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 	/* Priority ranking */
 	const float PickupPriority = 5.f;
 	const float EscapeePriority = 2.f;
+	const float StaticInteractivePriority = 1.5f;
 	const float FollowerEscapeePriority = 1.f;
 
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
@@ -196,6 +197,13 @@ AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 					}
 				}
 			}
+
+			if (Actor->ActorHasTag("Door") && HighestPriority < StaticInteractivePriority)
+			{
+				HighestPriorityActor = Actor;
+				HighestPriority = StaticInteractivePriority;
+			}
+
 		}
 		return HighestPriorityActor;
 
