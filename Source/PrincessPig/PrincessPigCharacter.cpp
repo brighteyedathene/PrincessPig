@@ -64,8 +64,8 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// Create camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->bAbsoluteRotation = true; // Don't want arm to rotate when character does
-	CameraBoom->TargetArmLength = 1800.f;
-	CameraBoom->RelativeRotation = FRotator(-65.f, 0.f, 0.f);
+	CameraBoom->TargetArmLength = 2200.f;
+	CameraBoom->RelativeRotation = FRotator(280.f, 0.f, 0.f);
 	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->SetupAttachment(RootComponent);
@@ -81,6 +81,19 @@ APrincessPigCharacter::APrincessPigCharacter()
 
 	// Create perception stimuli source
 	PerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionStimuliSource"));
+
+	// Configure Health
+	Replicated_MaxHealth = 1.f;
+	Replicated_CurrentHealth = Replicated_MaxHealth;
+	Replicated_IsDead = false;
+}
+
+void APrincessPigCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	Replicated_CurrentHealth = Replicated_MaxHealth;
+	Replicated_IsDead = false;
 }
 
 void APrincessPigCharacter::Tick(float DeltaSeconds)
@@ -159,6 +172,30 @@ void APrincessPigCharacter::OnSubdueTimerExpired()
 
 #pragma endregion Subdue
 
+
+#pragma region Health
+
+bool APrincessPigCharacter::Server_TakeDamage_Validate(float Damage) { return true; }
+void APrincessPigCharacter::Server_TakeDamage_Implementation(float Damage)
+{
+	Replicated_CurrentHealth = Replicated_CurrentHealth - Damage;
+	if (Replicated_CurrentHealth <= 0)
+	{
+		Replicated_IsDead = true;
+
+		// Disable collision with doors and other pawns on death
+		Server_SetAllowOverlapPawns(true);
+		Server_SetAllowOverlapDynamic(true);
+
+		// Disable movement
+		GetCharacterMovement()->DisableMovement();
+
+		// Call the blueprint event for blueprint effects
+		BPEvent_OnDie();
+	}
+}
+
+#pragma endregion Health
 
 
 void APrincessPigCharacter::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -328,8 +365,12 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_MaxHealth);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_CurrentHealth);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsDead);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapDynamic);
 	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);
 	DOREPLIFETIME(APrincessPigCharacter, Followers);
 	DOREPLIFETIME(APrincessPigCharacter, Leader);
@@ -349,9 +390,34 @@ void APrincessPigCharacter::Server_SetAllowOverlapPawns_Implementation(bool Allo
 void APrincessPigCharacter::OnRep_AllowOverlapPawns()
 {
 	if (Replicated_AllowOverlapPawns)
+	{
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Overlap);
+	}
 	else
+	{
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECR_Block);
+	}
+}
+/* AllowOverlap Dynamic
+This is for doors! when characters die, we don't really want them stopping doors
+*/
+bool APrincessPigCharacter::Server_SetAllowOverlapDynamic_Validate(bool AllowOverlapDynamic) { return true; }
+void APrincessPigCharacter::Server_SetAllowOverlapDynamic_Implementation(bool AllowOverlapDynamic)
+{
+	Replicated_AllowOverlapDynamic = AllowOverlapDynamic;
+	OnRep_AllowOverlapDynamic();
+}
+
+void APrincessPigCharacter::OnRep_AllowOverlapDynamic()
+{
+	if (Replicated_AllowOverlapDynamic)
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECR_Overlap);
+	}
+	else
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECR_Block);
+	}
 }
 
 

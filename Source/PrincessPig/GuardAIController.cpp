@@ -120,6 +120,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 			PursuitLocation = GetObjectivePursuitLocation();
 		}
 
+		// Check the status of the objective target (might be dead, disappeared etc)
 		if(CurrentObjective->RequiresInteraction())
 		{
 			if (CurrentObjective->TargetActor->IsPendingKillPending())
@@ -127,6 +128,19 @@ void AGuardAIController::Tick(float DeltaSeconds)
 				// Actor not there anymore? Demote to search and check line of sight for something else to do
 				CurrentObjective->SetObjectiveType(EObjectiveType::Search);
 				CheckCurrentLineOfSight();
+			}
+
+			// Is the objective a character?
+			APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(CurrentObjective->TargetActor);
+			if (PPCharacter)
+			{
+				// If the target is dead, there's nothing more to do (FOR NOW)
+				if (PPCharacter->Replicated_IsDead)
+				{
+					CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+					CheckCurrentLineOfSight();
+				}
+
 			}
 		}
 	}
@@ -184,9 +198,13 @@ void AGuardAIController::RespondToActorSeen(AActor* Actor)
 	// Maybe create an objective based on this actor
 	if (Actor->ActorHasTag("Character.Escapee"))
 	{
-		if (ShouldSetNewObjective(EObjectiveType::Chase, Actor))
+		APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Actor);
+		if (PPCharacter && !PPCharacter->Replicated_IsDead)
 		{
-			SetNewObjective(EObjectiveType::Chase, Actor);
+			if (ShouldSetNewObjective(EObjectiveType::Chase, Actor))
+			{
+				SetNewObjective(EObjectiveType::Chase, Actor);
+			}
 		}
 	}
 

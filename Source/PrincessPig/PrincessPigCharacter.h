@@ -17,6 +17,7 @@ public:
 	APrincessPigCharacter();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void BeginPlay() override;
 
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -123,6 +124,25 @@ public:
 #pragma endregion Subdue
 
 
+#pragma region Health
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")
+		float Replicated_MaxHealth;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")
+		float Replicated_CurrentHealth;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")
+		bool Replicated_IsDead;
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Health")
+		void Server_TakeDamage(float Damage);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Health")
+		void BPEvent_OnDie();
+
+#pragma endregion Health
+
 
 #pragma region Interaction
 
@@ -197,13 +217,22 @@ public:
 #pragma region Replication
 
 	UPROPERTY(ReplicatedUsing = OnRep_AllowOverlapPawns)
-	bool Replicated_AllowOverlapPawns; // Use Server_SetAllowedOverlapPawns to modify
+	bool Replicated_AllowOverlapPawns; // Use Server_SetAllowOverlapPawns to modify
 
 	UFUNCTION(Category = "Replication")
 	virtual void OnRep_AllowOverlapPawns();
 
 	UFUNCTION(Server, Reliable, WithValidation, Category = "Replication")
 	void Server_SetAllowOverlapPawns(bool AllowOverlapPawns);
+
+	UPROPERTY(ReplicatedUsing = OnRep_AllowOverlapDynamic)
+	bool Replicated_AllowOverlapDynamic; // Use Server_SetAllowOverlapDynamic to modify
+
+	UFUNCTION(Category = "Replication")
+	virtual void OnRep_AllowOverlapDynamic();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Replication")
+	void Server_SetAllowOverlapDynamic(bool AllowOverlapDynamic);
 
 #pragma endregion Replication
 };
