@@ -38,6 +38,12 @@ public:
 	void OnUseItemPressed();
 	void OnUseItemReleased();
 
+	void OnUseHeldItemPressed();
+	void OnUseHeldItemReleased();
+
+	void OnDropHeldItemPressed();
+	void OnDropHeldItemReleased();
+
 	void OnPerformActionPressed();
 	void OnPerformActionReleased();
 

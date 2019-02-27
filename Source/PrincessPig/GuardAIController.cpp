@@ -126,8 +126,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 			if (CurrentObjective->TargetActor->IsPendingKillPending())
 			{
 				// Actor not there anymore? Demote to search and check line of sight for something else to do
-				CurrentObjective->SetObjectiveType(EObjectiveType::Search);
-				CheckCurrentLineOfSight();
+				DowngradeObjectiveToSearch();
 			}
 
 			// Is the objective a character?
@@ -137,8 +136,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 				// If the target is dead, there's nothing more to do (FOR NOW)
 				if (PPCharacter->Replicated_IsDead)
 				{
-					CurrentObjective->SetObjectiveType(EObjectiveType::Search);
-					CheckCurrentLineOfSight();
+					DowngradeObjectiveToSearch();
 				}
 
 			}
@@ -286,7 +284,7 @@ void AGuardAIController::CheckCurrentLineOfSight()
 
 bool AGuardAIController::ShouldSetNewObjective(EObjectiveType NewType, AActor* NewTargetActor)
 {
-	if (NewTargetActor)
+	if (NewTargetActor && !NewTargetActor->IsPendingKillPending())
 	{
 		bool NewObjectiveIsCloser = GetObjectiveDistance() > FVector::Distance(GetPawn()->GetActorLocation(), NewTargetActor->GetActorLocation());
 
@@ -412,6 +410,19 @@ void AGuardAIController::ClearObjective()
 { 
 	SetNewObjective(EObjectiveType::None, nullptr);
 }
+
+
+void AGuardAIController::DowngradeObjectiveToSearch()
+{
+	if (CurrentObjective && CurrentObjective->Type != EObjectiveType::None)
+	{
+		CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+		
+		CheckCurrentLineOfSight();
+	}
+}
+
+
 
 void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType)
 {

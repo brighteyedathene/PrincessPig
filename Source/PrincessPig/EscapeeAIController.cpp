@@ -47,7 +47,7 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 		Escapee->Server_SetAllowOverlapPawns(true);
 
 		// Allow AI escapees to be lead
-		Escapee->bCanBecomeFollower = true;
+		Escapee->Replicated_CanBecomeFollower = true;
 	}
 }
 

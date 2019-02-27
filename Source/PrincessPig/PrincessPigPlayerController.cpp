@@ -8,7 +8,7 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SphereComponent.h"
-
+#include "Item.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -74,6 +74,12 @@ void APrincessPigPlayerController::SetupInputComponent()
 	InputComponent->BindAction("UseItem", IE_Pressed, this, &APrincessPigPlayerController::OnUseItemPressed);
 	InputComponent->BindAction("UseItem", IE_Released, this, &APrincessPigPlayerController::OnUseItemReleased);
 
+	InputComponent->BindAction("UseHeldItem", IE_Pressed, this, &APrincessPigPlayerController::OnUseHeldItemPressed);
+	InputComponent->BindAction("UseHeldItem", IE_Released, this, &APrincessPigPlayerController::OnUseHeldItemReleased);
+
+	InputComponent->BindAction("DropHeldItem", IE_Pressed, this, &APrincessPigPlayerController::OnDropHeldItemPressed);
+	InputComponent->BindAction("DropHeldItem", IE_Released, this, &APrincessPigPlayerController::OnDropHeldItemReleased);
+
 	InputComponent->BindAction("Interact", IE_Pressed, this, &APrincessPigPlayerController::OnInteractPressed);
 	InputComponent->BindAction("Interact", IE_Released, this, &APrincessPigPlayerController::OnInteractReleased);
 
@@ -91,7 +97,7 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 	if (PPCharacter)
 	{
 		// We don't want players to become followers just yet
-		PPCharacter->bCanBecomeFollower = false;
+		PPCharacter->Replicated_CanBecomeFollower = false;
 	}
 }
 
@@ -129,12 +135,45 @@ void APrincessPigPlayerController::OnUseItemReleased()
 {}
 
 
+void APrincessPigPlayerController::OnUseHeldItemPressed()
+{
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter && PPCharacter->HeldItem)
+	{
+		PPCharacter->Server_UseHeldItem();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("No held item to use!"));
+	}
+}
+void APrincessPigPlayerController::OnUseHeldItemReleased()
+{
+}
+
+void APrincessPigPlayerController::OnDropHeldItemPressed()
+{
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter && PPCharacter->HeldItem)
+	{
+		PPCharacter->Server_DropHeldItem();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("No held item to drop!"));
+	}
+}
+void APrincessPigPlayerController::OnDropHeldItemReleased()
+{
+}
+
+
 void APrincessPigPlayerController::OnInteractPressed()
 {
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
 	{
-		PPCharacter->BPEvent_Interact(GetHighestPriorityInteraction());
+		PPCharacter->Server_Interact(GetHighestPriorityInteraction());
 	}
 }
 void APrincessPigPlayerController::OnInteractReleased()
@@ -153,13 +192,16 @@ void APrincessPigPlayerController::OnDismissPressed()
 
 #pragma region Interaction
 
+
 AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 {
+	// TODO: Maybe change this function to SortInteractions()
+
 	/* Priority ranking */
-	const float PickupPriority = 5.f;
+	const float HoldableItemPriority = 4.f;
 	const float EscapeePriority = 2.f;
 	const float StaticInteractivePriority = 1.5f;
-	const float FollowerEscapeePriority = 1.f;
+	const float FollowerPriority = 1.f;
 
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
@@ -171,37 +213,41 @@ AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 			if (!Actor)
 				continue;
 
-			if (Actor->ActorHasTag("Pickup") && HighestPriority < PickupPriority)
+			if (Actor->ActorHasTag("Item"))
 			{
-				HighestPriorityActor = Actor;
-				HighestPriority = PickupPriority;
+				AItem* Item = Cast<AItem>(Actor);
+				if (Item)
+				{
+					if (HighestPriority < HoldableItemPriority)
+					{
+						HighestPriorityActor = Actor;
+						HighestPriority = HoldableItemPriority;
+					}
+				}
 			}
 
-			if (Actor->ActorHasTag("Character.Escapee"))
+			else if (Actor->ActorHasTag("Character.Escapee"))
 			{
 				APrincessPigCharacter* Escapee = Cast<APrincessPigCharacter>(Actor);
-				if (PPCharacter->Followers.Contains(Escapee))
+				if (Escapee && Escapee->Replicated_CanBecomeFollower)
 				{
-					if (HighestPriority < FollowerEscapeePriority)
+					if (PPCharacter->Followers.Contains(Escapee))
 					{
-						HighestPriorityActor = Actor;
-						HighestPriority = FollowerEscapeePriority;
+						if (HighestPriority < FollowerPriority)
+						{
+							HighestPriorityActor = Actor;
+							HighestPriority = FollowerPriority;
+						}
+					}
+					else
+					{
+						if (HighestPriority < EscapeePriority)
+						{
+							HighestPriorityActor = Actor;
+							HighestPriority = EscapeePriority;
+						}
 					}
 				}
-				else
-				{
-					if (HighestPriority < EscapeePriority)
-					{
-						HighestPriorityActor = Actor;
-						HighestPriority = EscapeePriority;
-					}
-				}
-			}
-
-			if (Actor->ActorHasTag("Door") && HighestPriority < StaticInteractivePriority)
-			{
-				HighestPriorityActor = Actor;
-				HighestPriority = StaticInteractivePriority;
 			}
 
 		}

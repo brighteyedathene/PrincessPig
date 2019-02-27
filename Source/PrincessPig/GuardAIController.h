@@ -118,6 +118,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Objective")
 	void ClearObjective();
 
+	UFUNCTION(BlueprintCallable, Category = "Objective")
+	void DowngradeObjectiveToSearch();
+
 	// Delegate functions for objectives
 	UPROPERTY(BlueprintAssignable, Category = "Objective")
 	FObjectiveChangedDelegate OnObjectiveChanged;

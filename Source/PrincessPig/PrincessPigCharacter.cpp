@@ -18,7 +18,7 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Hearing.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Item.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -31,13 +31,19 @@ APrincessPigCharacter::APrincessPigCharacter()
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetIsReplicated(true);
 
-	// create interaction sphere
+	// Create interaction sphere
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>("InteractionComponent");
 	InteractionComponent->SetupAttachment(RootComponent);
 	InteractionComponent->SetRelativeLocation(FVector(70, 0, 0));
 	InteractionComponent->IgnoreActorWhenMoving(this, true);
 	InteractionComponent->OnComponentBeginOverlap.AddDynamic(this, &APrincessPigCharacter::RespondToInteractionBeginOverlap);
 	InteractionComponent->OnComponentEndOverlap.AddDynamic(this, &APrincessPigCharacter::RespondToInteractionEndOverlap);
+
+	// Create item handle for non-stowable items
+	ItemHandle = CreateDefaultSubobject<USceneComponent>("ItemHandle");
+	ItemHandle->SetupAttachment(RootComponent);
+	ItemHandle->SetRelativeLocation(FVector(50, 30, 0));
+	ItemHandle->SetRelativeRotation(FRotator(0, 0, -25));
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
 	bUseControllerRotationPitch = false;
@@ -68,6 +74,7 @@ APrincessPigCharacter::APrincessPigCharacter()
 	CameraBoom->RelativeRotation = FRotator(280.f, 0.f, 0.f);
 	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
 	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 0.5;
 	CameraBoom->SetupAttachment(RootComponent);
 
 	// Create top-down camera
@@ -183,12 +190,16 @@ void APrincessPigCharacter::Server_TakeDamage_Implementation(float Damage)
 	{
 		Replicated_IsDead = true;
 
+		// Drop any held item
+		Server_DropHeldItem();
+
 		// Disable collision with doors and other pawns on death
 		Server_SetAllowOverlapPawns(true);
 		Server_SetAllowOverlapDynamic(true);
 
-		// Disable movement
+		// Disable movement and collision avoidance
 		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->SetAvoidanceEnabled(false);
 
 		// Call the blueprint event for blueprint effects
 		BPEvent_OnDie();
@@ -197,6 +208,10 @@ void APrincessPigCharacter::Server_TakeDamage_Implementation(float Damage)
 
 #pragma endregion Health
 
+
+
+
+#pragma region Interaction
 
 void APrincessPigCharacter::RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -210,7 +225,6 @@ void APrincessPigCharacter::RespondToInteractionBeginOverlap(UPrimitiveComponent
 	}
 }
 
-
 void APrincessPigCharacter::RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (HasAuthority())
@@ -223,9 +237,79 @@ void APrincessPigCharacter::RespondToInteractionEndOverlap(UPrimitiveComponent* 
 	}
 }
 
+bool APrincessPigCharacter::Server_Interact_Validate(AActor* InteractTarget) { return true; }
+void APrincessPigCharacter::Server_Interact_Implementation(AActor* InteractTarget)
+{
+	if (InteractTarget && AvailableInteractions.Contains(InteractTarget))
+	{
+		GEngine->AddOnScreenDebugMessage(123445, 6.f, FColor::White, FString("Interacting with ") + InteractTarget->GetName());
+		if (InteractTarget->ActorHasTag("Item"))
+		{
+			Server_PickUpItem(InteractTarget);
+		}
+
+		else if (InteractTarget->ActorHasTag("Character.Escapee"))
+		{
+			APrincessPigCharacter* Escapee = Cast<APrincessPigCharacter>(InteractTarget);
+			if (Escapee)
+			{
+				GEngine->AddOnScreenDebugMessage(123445, 6.f, FColor::White, FString("Recruiting ") + InteractTarget->GetName());
+				RecruitFollower(Escapee);
+			}
+		}
+	}
+}
 
 #pragma endregion Interaction
 
+
+
+#pragma region Items
+
+bool APrincessPigCharacter::Server_PickUpItem_Validate(AActor* ItemActor) { return true; }
+void APrincessPigCharacter::Server_PickUpItem_Implementation(AActor* ItemActor)
+{
+	if (ItemActor && AvailableInteractions.Contains(ItemActor))
+	{
+		AItem* Item = Cast<AItem>(ItemActor);
+		if (Item)
+		{
+			if (!HeldItem)
+			{
+				HeldItem = Item;
+				HeldItem->BPEvent_OnPickedUp(this);
+			}
+			else
+			{
+				// must drop held item to pick this up!
+			}
+			
+		}
+	}
+}
+
+bool APrincessPigCharacter::Server_UseHeldItem_Validate() { return true; }
+void APrincessPigCharacter::Server_UseHeldItem_Implementation()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString("Trying to use held item..."));
+	if (HeldItem)
+	{
+		HeldItem->Use(this);
+	}
+}
+
+bool APrincessPigCharacter::Server_DropHeldItem_Validate() { return true; }
+void APrincessPigCharacter::Server_DropHeldItem_Implementation()
+{
+	if (HeldItem)
+	{
+		HeldItem->BPEvent_OnDropped();
+		HeldItem = nullptr;
+	}
+}
+
+
+#pragma endregion Items
 
 
 
@@ -304,7 +388,7 @@ void APrincessPigCharacter::StopFollowing(APrincessPigCharacter* ThisLeader)
 
 void APrincessPigCharacter::RecruitFollower(APrincessPigCharacter* NewFollower)
 {
-	if(NewFollower->bCanBecomeFollower && !Followers.Contains(NewFollower))
+	if(NewFollower->Replicated_CanBecomeFollower && !Followers.Contains(NewFollower))
 		NewFollower->BeginFollowing(this);
 }
 
@@ -365,6 +449,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(APrincessPigCharacter, HeldItem);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_MaxHealth);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_CurrentHealth);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsDead);
@@ -372,6 +457,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapDynamic);
 	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_CanBecomeFollower);
 	DOREPLIFETIME(APrincessPigCharacter, Followers);
 	DOREPLIFETIME(APrincessPigCharacter, Leader);
 }

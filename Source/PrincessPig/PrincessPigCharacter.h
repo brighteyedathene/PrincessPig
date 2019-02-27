@@ -8,6 +8,8 @@
 #include "GenericTeamAgentInterface.h"
 #include "PrincessPigCharacter.generated.h"
 
+class AItem;
+
 UCLASS(Blueprintable)
 class APrincessPigCharacter : public ACharacter, public IGenericTeamAgentInterface
 {
@@ -42,6 +44,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 	class UInteractionComponent* InteractionComponent;
 
+	/** Scene component for held items to attach to */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Items")
+	class USceneComponent* ItemHandle;
 
 #pragma region CollisionAvoidance
 
@@ -93,6 +98,51 @@ public:
 
 
 
+#pragma region Interaction
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
+		TArray<AActor*> AvailableInteractions;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
+		AActor* HighestPriorityInteraction;
+
+	UFUNCTION()
+		void RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "Actions")
+	void Server_Interact(AActor* InteractTarget);
+
+#pragma endregion Interaction
+
+
+
+#pragma region Items
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Items")
+	AItem* HeldItem;
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Items")
+	void Server_PickUpItem(AActor* ItemActor);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Items")
+	void Server_UseHeldItem();
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Items")
+	void Server_DropHeldItem();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Items")
+		void BPEvent_OnBeginHoldItem(AActor* Item);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Items")
+		void BPEvent_OnEndHoldItem(AActor* Item);
+
+#pragma endregion Items
+
+
+
 #pragma region Subdue
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Subdue")
@@ -124,6 +174,7 @@ public:
 #pragma endregion Subdue
 
 
+
 #pragma region Health
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")
@@ -144,24 +195,6 @@ public:
 #pragma endregion Health
 
 
-#pragma region Interaction
-
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
-	TArray<AActor*> AvailableInteractions;
-
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Interaction")
-	AActor* HighestPriorityInteraction;
-
-	UFUNCTION()
-	void RespondToInteractionBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void RespondToInteractionEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-
-#pragma endregion Interaction
-
-
 
 #pragma region Teams
 	// IGenericTeamAgentInterface
@@ -180,8 +213,8 @@ public:
 	UPROPERTY(Replicated)
 	TArray<APrincessPigCharacter*> Followers;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
-	bool bCanBecomeFollower;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Follow")
+	bool Replicated_CanBecomeFollower;
 	
 	UFUNCTION(BlueprintCallable, Category = "Follow")
 	virtual void BeginFollowing(APrincessPigCharacter* NewLeader);
