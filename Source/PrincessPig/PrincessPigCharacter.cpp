@@ -41,9 +41,18 @@ APrincessPigCharacter::APrincessPigCharacter()
 
 	// Create item handle for non-stowable items
 	ItemHandle = CreateDefaultSubobject<USceneComponent>("ItemHandle");
-	ItemHandle->SetupAttachment(RootComponent);
-	ItemHandle->SetRelativeLocation(FVector(50, 30, 0));
-	ItemHandle->SetRelativeRotation(FRotator(0, 0, -25));
+	if (GetMesh())
+	{
+		ItemHandle->SetupAttachment(GetMesh(), FName("ItemSocket"));
+		ItemHandle->SetRelativeLocation(FVector(0, 0, 0));
+		ItemHandle->SetRelativeRotation(FRotator(0, 0, 0));
+	}
+	else
+	{
+		ItemHandle->SetupAttachment(RootComponent);
+		ItemHandle->SetRelativeLocation(FVector(50, 30, 0));
+		ItemHandle->SetRelativeRotation(FRotator(0, 0, -25));
+	}
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
 	bUseControllerRotationPitch = false;
@@ -53,7 +62,6 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// Configure character movement
 	WalkSpeed = 300;
 	RunSpeed = 600;
-	SetRunning();
 
 	// Collision avoidance
 	// Set to false here so that no RPC is needed to disable it upon Player Possession
@@ -101,6 +109,8 @@ void APrincessPigCharacter::BeginPlay()
 
 	Replicated_CurrentHealth = Replicated_MaxHealth;
 	Replicated_IsDead = false;
+
+	UpdateMovementModifiers();
 }
 
 void APrincessPigCharacter::Tick(float DeltaSeconds)
@@ -129,15 +139,56 @@ bool APrincessPigCharacter::IsAcceptingPlayerInput()
 	return !Replicated_IsSubdued;
 }
 
-void APrincessPigCharacter::SetWalking()
+void APrincessPigCharacter::SetMovementMode(EPPMovementMode NewMovementMode)
 {
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	MovementMode = NewMovementMode;
+	UpdateMovementModifiers();
 }
 
-void APrincessPigCharacter::SetRunning()
+bool APrincessPigCharacter::Server_SetMovementMode_Validate(EPPMovementMode NewMovementMode) { return true; }
+void APrincessPigCharacter::Server_SetMovementMode_Implementation(EPPMovementMode NewMovementMode)
 {
-	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+	SetMovementMode(NewMovementMode);
 }
+
+
+void APrincessPigCharacter::UpdateMovementModifiers()
+{
+	// Acceleration
+	if (Replicated_IsOffBalance)
+	{
+		GetCharacterMovement()->MaxAcceleration = 0;
+		GetCharacterMovement()->BrakingDecelerationWalking = 0;
+		GetCharacterMovement()->BrakingFrictionFactor = 0.01;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxAcceleration = NormalAcceleration;
+		GetCharacterMovement()->BrakingDecelerationWalking = NormalDeceleration;
+		GetCharacterMovement()->BrakingFrictionFactor = 1;
+	}
+
+	// Max speed
+	if (Replicated_IsSubdued)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 0;
+	}
+	else
+	{
+		switch (MovementMode)
+		{
+		case EPPMovementMode::Walking:
+			GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+			break;
+		case EPPMovementMode::Running:
+			GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+			break;
+		}
+	}
+
+}
+
+
 #pragma endregion MovementModes
 
 
@@ -162,6 +213,7 @@ void APrincessPigCharacter::Server_SetSubduedFor_Implementation(float Duration)
 
 void APrincessPigCharacter::OnRep_IsSubdued()
 {
+	// In case blueprints might want to know about being subued (eg, saying 'ouch' or displaying some particle)
 	if (Replicated_IsSubdued)
 	{
 		BPEvent_OnBeginSubdued();
@@ -170,14 +222,62 @@ void APrincessPigCharacter::OnRep_IsSubdued()
 	{
 		BPEvent_OnEndSubdued();
 	}
+
+	// Being subdued can affect movement capabilities
+	UpdateMovementModifiers();
 }
 
 void APrincessPigCharacter::OnSubdueTimerExpired()
 {
 	Replicated_IsSubdued = false;
+	OnRep_IsSubdued();
 }
 
 #pragma endregion Subdue
+
+
+
+#pragma region OffBalance
+
+bool APrincessPigCharacter::Server_SetOffBalanceDirectly_Validate(bool OffBalance) { return true; }
+void APrincessPigCharacter::Server_SetOffBalanceDirectly_Implementation(bool OffBalance)
+{
+	GetWorld()->GetTimerManager().ClearTimer(OffBalanceTimer);
+	Replicated_IsOffBalance = OffBalance;
+	OnRep_IsOffBalance();
+}
+
+bool APrincessPigCharacter::Server_SetOffBalanceFor_Validate(float Duration) { return Duration > 0; }
+void APrincessPigCharacter::Server_SetOffBalanceFor_Implementation(float Duration)
+{
+	GetWorld()->GetTimerManager().SetTimer(OffBalanceTimer, this, &APrincessPigCharacter::OnOffBalanceTimerExpired, Duration);
+	Replicated_IsOffBalance = true;
+	OnRep_IsOffBalance();
+}
+
+void APrincessPigCharacter::OnRep_IsOffBalance()
+{
+	if (Replicated_IsOffBalance)
+	{
+		BPEvent_OnBeginOffBalance();
+	}
+	else
+	{
+		BPEvent_OnEndOffBalance();
+	}
+
+	// OffBalance affects movement capabilities
+	UpdateMovementModifiers();
+}
+
+void APrincessPigCharacter::OnOffBalanceTimerExpired()
+{
+	Replicated_IsOffBalance = false;
+	OnRep_IsOffBalance();
+}
+
+#pragma endregion OffBalance
+
 
 
 #pragma region Health
@@ -350,7 +450,7 @@ void APrincessPigCharacter::BeginFollowing(APrincessPigCharacter* NewLeader)
 	}
 
 	// Begin running
-	SetRunning();
+	SetMovementMode(EPPMovementMode::Running);
 
 }
 
@@ -375,9 +475,6 @@ void APrincessPigCharacter::StopFollowing(APrincessPigCharacter* ThisLeader)
 		{
 			FollowInterface->SetLeader_Implementation(nullptr);
 		}
-
-		// Set walking again
-		SetWalking();
 	}
 	else
 	{
@@ -450,10 +547,12 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APrincessPigCharacter, HeldItem);
+	DOREPLIFETIME(APrincessPigCharacter, MovementMode);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_MaxHealth);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_CurrentHealth);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsDead);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsOffBalance);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapDynamic);
 	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);

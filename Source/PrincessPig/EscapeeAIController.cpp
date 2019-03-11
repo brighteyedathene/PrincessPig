@@ -37,9 +37,6 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 		// Get the team (this is mainly for perception, not that it matters hugely at this point)
 		SetGenericTeamId(Escapee->GetGenericTeamId());
 
-		// Escapee should start out walking
-		Escapee->SetWalking();
-
 		// Enable collision avoidance
 		Escapee->SetCollisionAvoidanceEnabled(true);
 

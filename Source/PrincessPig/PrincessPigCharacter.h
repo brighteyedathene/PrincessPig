@@ -10,6 +10,15 @@
 
 class AItem;
 
+
+UENUM(BlueprintType)
+enum class EPPMovementMode : uint8
+{
+	Walking UMETA(DisplayName = "Walking"),
+	Running UMETA(DisplayName = "Running")
+};
+
+
 UCLASS(Blueprintable)
 class APrincessPigCharacter : public ACharacter, public IGenericTeamAgentInterface
 {
@@ -59,16 +68,8 @@ public:
 
 #pragma region MovementModes
 	
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
-	bool IsAcceptingPlayerInput();
-
-	/** Writes values to CharacterMovement */
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	virtual void SetWalking();
-
-	/** Writes values to CharacterMovement */
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	virtual void SetRunning();
+	UPROPERTY(Replicated, Transient, BlueprintReadWrite, Category = "Movement")
+	EPPMovementMode MovementMode;
 
 	/** Max speed while walking
 	* This value is written to MaxWalkSpeed in Character Movement */
@@ -79,6 +80,29 @@ public:
 	* This value is written to MaxWalkSpeed in Character Movement */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float RunSpeed;
+	
+	/** Normal max acceleration */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		float NormalAcceleration;
+
+	/** Normal deceleration */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		float NormalDeceleration;
+
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Movement")
+		bool IsAcceptingPlayerInput();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SetMovementMode(EPPMovementMode NewMovementMode);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Movement")
+	void Server_SetMovementMode(EPPMovementMode NewMovementMode);
+
+	/* Updates CharacterMovement variables to reflect movement mode and status effects */
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		virtual void UpdateMovementModifiers();
+
 #pragma endregion MovementModes
 
 
@@ -86,7 +110,10 @@ public:
 #pragma region Actions
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
-	void BPEvent_PerformAction();
+	void BPEvent_StartAction();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
+	void BPEvent_StopAction();
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
 	void BPEvent_UseItem();
@@ -153,7 +180,7 @@ public:
 
 	FTimerHandle SubdueTimer;
 
-	UFUNCTION(Category = "Replication")
+	UFUNCTION(Category = "Subdue")
 		virtual void OnRep_IsSubdued();
 
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Subdue")
@@ -173,6 +200,37 @@ public:
 
 #pragma endregion Subdue
 
+
+#pragma region OffBalance
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "OffBalance")
+		bool IsOffBalance() { return Replicated_IsOffBalance; }
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsOffBalance)
+		bool Replicated_IsOffBalance;
+
+	FTimerHandle OffBalanceTimer;
+
+	UFUNCTION(Category = "OffBalance")
+		virtual void OnRep_IsOffBalance();
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "OffBalance")
+		void Server_SetOffBalanceDirectly(bool OffBalance);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "OffBalance")
+		void Server_SetOffBalanceFor(float Duration);
+
+	UFUNCTION()
+		void OnOffBalanceTimerExpired();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "OffBalance")
+		void BPEvent_OnBeginOffBalance();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "OffBalance")
+		void BPEvent_OnEndOffBalance();
+
+
+#pragma endregion OffBalance
 
 
 #pragma region Health

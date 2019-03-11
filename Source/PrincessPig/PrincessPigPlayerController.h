@@ -25,7 +25,6 @@ public:
 	// Gradually moves control rotation in line with movement input
 	void UpdateControlRotation(float DeltaTime);
 
-
 #pragma region InputEvents
 
 	float ForwardInput;

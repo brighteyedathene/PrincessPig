@@ -97,9 +97,6 @@ void AGuardAIController::Possess(APawn* Pawn)
 		// Get this guard's team
 		SetGenericTeamId(Guard->GetGenericTeamId());
 
-		// Guards should start out walking
-		Guard->SetWalking();
-
 		// Use collision avoidance
 		Guard->SetCollisionAvoidanceEnabled(true);
 
@@ -424,24 +421,7 @@ void AGuardAIController::DowngradeObjectiveToSearch()
 
 
 
-void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType)
-{
-	UE_LOG(LogTemp, Warning, TEXT("New objective: was %d, now %d"), (uint8)OldType, (uint8)NewType);
-
-	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
-	if (PPCharacter)
-	{
-		if (NewType == EObjectiveType::None)
-		{
-			PPCharacter->SetWalking();
-		}
-		else
-		{
-			PPCharacter->SetRunning();
-		}
-	}
-
-}
+void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType) {}
 
 
 #pragma endregion Objective

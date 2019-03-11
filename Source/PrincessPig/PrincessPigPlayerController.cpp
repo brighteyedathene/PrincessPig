@@ -60,6 +60,7 @@ void APrincessPigPlayerController::UpdateControlRotation(float DeltaTime)
 	}
 }
 
+
 void APrincessPigPlayerController::SetupInputComponent()
 {
 	// set up gameplay key bindings
@@ -98,6 +99,9 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 	{
 		// We don't want players to become followers just yet
 		PPCharacter->Replicated_CanBecomeFollower = false;
+
+		// By default, players should be running - maybe later I'll add some shift+WASD or sensitive thumbstick controls
+		PPCharacter->SetMovementMode(EPPMovementMode::Running);
 	}
 }
 
@@ -116,11 +120,17 @@ void APrincessPigPlayerController::OnPerformActionPressed()
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
 	{
-		PPCharacter->BPEvent_PerformAction();
+		PPCharacter->BPEvent_StartAction();
 	}
 }
 void APrincessPigPlayerController::OnPerformActionReleased()
-{}
+{
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		PPCharacter->BPEvent_StopAction();
+	}
+}
 
 
 void APrincessPigPlayerController::OnUseItemPressed()
