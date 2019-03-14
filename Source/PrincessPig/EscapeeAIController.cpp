@@ -24,27 +24,33 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 {
 	Super::Possess(Pawn);
 
-	AEscapee* Escapee = Cast<AEscapee>(Pawn);
-	if (Escapee)
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
+	if (PPCharacter)
 	{
 		// Start up blackboard and behavior tree
-		if (Escapee->BehaviorTree->BlackboardAsset)
+		if (PPCharacter->BehaviorTree->BlackboardAsset)
 		{
-			BlackboardComp->InitializeBlackboard(*(Escapee->BehaviorTree->BlackboardAsset));
+			BlackboardComp->InitializeBlackboard(*(PPCharacter->BehaviorTree->BlackboardAsset));
 		}
-		BehaviorTreeComp->StartTree(*Escapee->BehaviorTree);
+		BehaviorTreeComp->StartTree(*PPCharacter->BehaviorTree);
 
 		// Get the team (this is mainly for perception, not that it matters hugely at this point)
-		SetGenericTeamId(Escapee->GetGenericTeamId());
+		SetGenericTeamId(PPCharacter->GetGenericTeamId());
 
 		// Enable collision avoidance
-		Escapee->SetCollisionAvoidanceEnabled(true);
+		PPCharacter->SetCollisionAvoidanceEnabled(true);
+
+		// Configure avoidance group
+		FNavAvoidanceMask DefaultAvoidanceGroup;
+		DefaultAvoidanceGroup.ClearAll();
+		DefaultAvoidanceGroup.SetGroup(1);
+		PPCharacter->GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
 
 		// These AI guys shouldn't block player movement
-		Escapee->Server_SetAllowOverlapPawns(true);
+		PPCharacter->Server_SetAllowOverlapPawns(true);
 
 		// Allow AI escapees to be lead
-		Escapee->Replicated_CanBecomeFollower = true;
+		PPCharacter->Replicated_CanBecomeFollower = true;
 	}
 }
 

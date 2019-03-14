@@ -11,18 +11,18 @@
 EBTNodeResult::Type UBTT_SetNextPatrolPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	AGuardAIController* GuardAI = Cast<AGuardAIController>(OwnerComp.GetAIOwner());
-	AGuard* Guard = GuardAI ? Cast<AGuard>(GuardAI->GetPawn()) : nullptr;
+	APrincessPigCharacter* PPCharacter = GuardAI ? Cast<APrincessPigCharacter>(GuardAI->GetPawn()) : nullptr;
 
-	if (Guard && GuardAI)
+	if (PPCharacter && GuardAI)
 	{
-		if (Guard->PatrolRoute &&
-			Guard->PatrolRoute->PatrolPoints.Num() > 0)
+		if (PPCharacter->PatrolRoute &&
+			PPCharacter->PatrolRoute->PatrolPoints.Num() > 0)
 		{
 			UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
 			int CurrentIndex = BlackboardComp->GetValueAsInt(GuardAI->PatrolIndexKey);
 
-			int NextIndex = (CurrentIndex + 1) % Guard->PatrolRoute->PatrolPoints.Num();
-			APatrolPoint* NextPatrolPoint = Guard->PatrolRoute->PatrolPoints[NextIndex];
+			int NextIndex = (CurrentIndex + 1) % PPCharacter->PatrolRoute->PatrolPoints.Num();
+			APatrolPoint* NextPatrolPoint = PPCharacter->PatrolRoute->PatrolPoints[NextIndex];
 			FVector NextPatrolPointLookTarget = NextPatrolPoint->GetActorLocation() + NextPatrolPoint->GetActorForwardVector() * 200.f;
 			
 

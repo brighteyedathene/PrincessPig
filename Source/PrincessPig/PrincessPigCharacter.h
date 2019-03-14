@@ -8,8 +8,9 @@
 #include "GenericTeamAgentInterface.h"
 #include "PrincessPigCharacter.generated.h"
 
+class UBehaviorTree;
+class APatrolRoute;
 class AItem;
-
 
 UENUM(BlueprintType)
 enum class EPPMovementMode : uint8
@@ -63,6 +64,29 @@ public:
 	void SetCollisionAvoidanceEnabled(bool Enable);
 
 #pragma endregion CollisionAvoidance
+
+
+
+#pragma region AI
+
+	UPROPERTY(EditAnywhere, Category = "AI")
+	UBehaviorTree* BehaviorTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	APatrolRoute* PatrolRoute;
+
+
+#pragma endregion AI
+
+
+
+#pragma region Teams
+	// IGenericTeamAgentInterface
+	UPROPERTY(EditAnywhere, BlueprintreadWrite, Category = "AI")
+	FGenericTeamId TeamId;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
+#pragma endregion Teams
 
 
 
@@ -120,6 +144,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
 	void BPEvent_Interact(AActor* InteractTarget);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
+	void BPEvent_Agress();
 
 #pragma endregion Actions
 
@@ -201,6 +228,7 @@ public:
 #pragma endregion Subdue
 
 
+
 #pragma region OffBalance
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "OffBalance")
@@ -251,15 +279,6 @@ public:
 		void BPEvent_OnDie();
 
 #pragma endregion Health
-
-
-
-#pragma region Teams
-	// IGenericTeamAgentInterface
-	FGenericTeamId TeamId;
-	virtual FGenericTeamId GetGenericTeamId() const override;
-	virtual void SetGenericTeamId(const FGenericTeamId& TeamID);
-#pragma endregion Teams
 
 
 

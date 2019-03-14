@@ -7,7 +7,6 @@
 #include "Guard.generated.h"
 
 class UBehaviorTree;
-class APatrolRoute;
 
 /**
  * 
@@ -18,19 +17,5 @@ class PRINCESSPIG_API AGuard : public APrincessPigCharacter
 	GENERATED_BODY()
 
 public:
-
 	AGuard();
-
-	UPROPERTY(EditAnywhere, Category = "AI")
-	UBehaviorTree* BehaviorTree;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	APatrolRoute* PatrolRoute;
-
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Actions")
-		void BPEvent_ObjectiveReached();
-
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Actions")
-		void BPEvent_Subdue();
 };

@@ -18,9 +18,4 @@ class PRINCESSPIG_API AEscapee : public APrincessPigCharacter
 	
 public:
 	AEscapee();
-
-	UPROPERTY(EditAnywhere, Category = "AI")
-	UBehaviorTree* BehaviorTree;
-	
-	
 };

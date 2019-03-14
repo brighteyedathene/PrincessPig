@@ -13,9 +13,8 @@ EBTNodeResult::Type UBTT_WaitAtPatrolPoint::ExecuteTask(UBehaviorTreeComponent& 
 	bNotifyTick = true;
 
 	AGuardAIController* GuardAI = Cast<AGuardAIController>(OwnerComp.GetAIOwner());
-	AGuard* Guard = GuardAI ? Cast<AGuard>(GuardAI->GetPawn()) : nullptr;
 
-	if (Guard && GuardAI)
+	if (GuardAI)
 	{
 		UBlackboardComponent* BlackboardComp = GuardAI->GetBlackboardComp();
 

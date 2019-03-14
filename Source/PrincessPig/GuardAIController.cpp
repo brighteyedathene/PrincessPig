@@ -84,22 +84,33 @@ void AGuardAIController::Possess(APawn* Pawn)
 	// Create objective uobject
 	CurrentObjective = NewObject<UObjective>();
 	
-	AGuard* Guard = Cast<AGuard>(Pawn);
-	if (Guard)
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
+	if (PPCharacter)
 	{
 		// Start up blackboard and behavior tree
-		if (Guard->BehaviorTree->BlackboardAsset)
+		if (PPCharacter->BehaviorTree->BlackboardAsset)
 		{
-			BlackboardComp->InitializeBlackboard(*(Guard->BehaviorTree->BlackboardAsset));
+			BlackboardComp->InitializeBlackboard(*(PPCharacter->BehaviorTree->BlackboardAsset));
 		}
-		BehaviorTreeComp->StartTree(*Guard->BehaviorTree);
+		BehaviorTreeComp->StartTree(*PPCharacter->BehaviorTree);
 
 		// Get this guard's team
-		SetGenericTeamId(Guard->GetGenericTeamId());
+		SetGenericTeamId(PPCharacter->GetGenericTeamId());
 
 		// Use collision avoidance
-		Guard->SetCollisionAvoidanceEnabled(true);
+		PPCharacter->SetCollisionAvoidanceEnabled(true);
 
+		// Configure avoidance group (0 for guards)
+		FNavAvoidanceMask DefaultAvoidanceGroup;
+		DefaultAvoidanceGroup.ClearAll();
+		DefaultAvoidanceGroup.SetGroup(0);
+		PPCharacter->GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
+		
+		// Don't try to avoid players or escapees (groups 1 and 2)
+		FNavAvoidanceMask DefaultGroupsToIgnore;
+		DefaultGroupsToIgnore.SetGroup(1);
+		DefaultGroupsToIgnore.SetGroup(2);
+		PPCharacter->GetCharacterMovement()->SetGroupsToIgnoreMask(DefaultGroupsToIgnore);
 	}
 }
 

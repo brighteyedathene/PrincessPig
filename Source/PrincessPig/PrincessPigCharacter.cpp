@@ -62,6 +62,8 @@ APrincessPigCharacter::APrincessPigCharacter()
 	// Configure character movement
 	WalkSpeed = 300;
 	RunSpeed = 600;
+	NormalAcceleration = 2048;
+	NormalDeceleration = 2048;
 
 	// Collision avoidance
 	// Set to false here so that no RPC is needed to disable it upon Player Possession
@@ -74,6 +76,7 @@ APrincessPigCharacter::APrincessPigCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
+
 
 	// Create camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
