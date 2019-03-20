@@ -12,13 +12,12 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Perception/AIPerceptionComponent.h"
-//#include "Perception/AISense.h"
-//#include "Perception/AISense_Sight.h"
-//#include "Perception/AISense_Hearing.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GenericTeamAgentInterface.h"
+
+#include "NavigationSystem.h"
 
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
@@ -28,7 +27,7 @@ AGuardAIController::AGuardAIController()
 	BehaviorTreeComp = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComp"));
 	BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComp"));
 	PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
-	
+
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
 
@@ -368,33 +367,43 @@ void AGuardAIController::WriteObjectiveToBlackboard()
 
 FVector AGuardAIController::GetObjectivePursuitLocation()
 {
-	if (CurrentObjective)
-	{
-		float TimeToReachTarget = GetEstimatedTimeToReach(CurrentObjective->GetLastKnownLocation(), INFINITY);
-
-		FVector NaivePredictedLocation = CurrentObjective->GetExtrapolatedLocation(TimeToReachTarget);
-		
-		// Trace along the objective target's current trajectory 
-		FHitResult Hit;
-		if (GetWorld()->LineTraceSingleByChannel(
-			Hit,
-			CurrentObjective->GetLastKnownLocation(),
-			NaivePredictedLocation,
-			ECollisionChannel::ECC_Visibility))
-		{
-			// we have a hit! place the point a little bit back though
-			float SafetyBufferDistance = 20.f;
-			return Hit.ImpactPoint + Hit.ImpactNormal * SafetyBufferDistance;
-		}
-		else
-		{
-			return NaivePredictedLocation;
-		}
-	}
-	else
+	if (!CurrentObjective)
 	{
 		return FVector(0, 0, 0);
 	}
+
+	float TimeToReachTarget = GetEstimatedTimeToReach(CurrentObjective->GetLastKnownLocation(), INFINITY);
+
+	FVector PursuitLocation = CurrentObjective->GetExtrapolatedLocation(TimeToReachTarget);
+		
+	// Trace along the objective target's current trajectory 
+	FHitResult Hit;
+	if (GetWorld()->LineTraceSingleByChannel(
+		Hit,
+		CurrentObjective->GetLastKnownLocation(),
+		PursuitLocation,
+		ECollisionChannel::ECC_Visibility))
+	{
+		// we have a hit! place the point a little bit back though
+		float SafetyBufferDistance = 20.f;
+		PursuitLocation = Hit.ImpactPoint + Hit.ImpactNormal * SafetyBufferDistance;
+	}
+
+	// Project to navigation
+	FNavLocation NavigableLocation;
+	if (UNavigationSystemV1::GetNavigationSystem(this)->ProjectPointToNavigation(PursuitLocation, NavigableLocation))
+	{
+		PursuitLocation = NavigableLocation.Location;
+		DrawDebugCircle(GetWorld(), PursuitLocation, 10, 3, FColor::Magenta, true, 0, 0, 10);
+	}
+	else
+	{
+		PursuitLocation = CurrentObjective->GetLastKnownLocation();
+		DrawDebugCircle(GetWorld(), PursuitLocation, 10, 3, FColor::Red, true, 0, 0, 10);
+
+	}
+
+	return PursuitLocation;
 }
 
 float AGuardAIController::GetEstimatedTimeToReach(FVector Location, float MaxEstimate)
