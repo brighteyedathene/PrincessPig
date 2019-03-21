@@ -150,7 +150,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 		}
 	}
 
-	DebugShowObjective();
+	//DebugShowObjective();
 
 }
 
@@ -394,12 +394,10 @@ FVector AGuardAIController::GetObjectivePursuitLocation()
 	if (UNavigationSystemV1::GetNavigationSystem(this)->ProjectPointToNavigation(PursuitLocation, NavigableLocation))
 	{
 		PursuitLocation = NavigableLocation.Location;
-		DrawDebugCircle(GetWorld(), PursuitLocation, 10, 3, FColor::Magenta, true, 0, 0, 10);
 	}
 	else
 	{
 		PursuitLocation = CurrentObjective->GetLastKnownLocation();
-		DrawDebugCircle(GetWorld(), PursuitLocation, 10, 3, FColor::Red, true, 0, 0, 10);
 
 	}
 

@@ -193,6 +193,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Items")
 		void BPEvent_OnEndHoldItem(AActor* Item);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Items")
+		bool IsHoldingItem() { return (HeldItem) ? true : false; };
+
 #pragma endregion Items
 
 
