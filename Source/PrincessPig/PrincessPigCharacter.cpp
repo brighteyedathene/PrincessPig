@@ -41,6 +41,7 @@ APrincessPigCharacter::APrincessPigCharacter()
 
 	// Create item handle for non-stowable items
 	ItemHandle = CreateDefaultSubobject<USceneComponent>("ItemHandle");
+	//if (nullptr != GetMesh() && nullptr != GetMesh()->GetSocketByName(FName("ItemSocket")))
 	if (GetMesh())
 	{
 		ItemHandle->SetupAttachment(GetMesh(), FName("ItemSocket"));
