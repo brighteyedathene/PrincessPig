@@ -22,7 +22,8 @@
 
 #include "DrawDebugHelpers.h"
 
-APrincessPigCharacter::APrincessPigCharacter()
+APrincessPigCharacter::APrincessPigCharacter(const class FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Probable already set as default in Super, but...
 	bReplicates = true;

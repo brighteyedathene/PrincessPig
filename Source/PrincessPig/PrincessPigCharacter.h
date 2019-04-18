@@ -26,7 +26,7 @@ class APrincessPigCharacter : public ACharacter, public IGenericTeamAgentInterfa
 	GENERATED_BODY()
 
 public:
-	APrincessPigCharacter();
+	APrincessPigCharacter(const class FObjectInitializer& ObjectInitializer);
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
