@@ -17,5 +17,5 @@ class PRINCESSPIG_API AGuard : public APrincessPigCharacter
 	GENERATED_BODY()
 
 public:
-	AGuard();
+	AGuard(const class FObjectInitializer& ObjectInitializer);
 };

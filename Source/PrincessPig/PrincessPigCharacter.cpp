@@ -19,11 +19,12 @@
 #include "Perception/AISense_Hearing.h"
 #include "Net/UnrealNetwork.h"
 #include "Item.h"
+#include "PPMovementComponent.h"
 
 #include "DrawDebugHelpers.h"
 
 APrincessPigCharacter::APrincessPigCharacter(const class FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UPPMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Probable already set as default in Super, but...
 	bReplicates = true;

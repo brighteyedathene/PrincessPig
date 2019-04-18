@@ -17,5 +17,5 @@ class PRINCESSPIG_API AEscapee : public APrincessPigCharacter
 	GENERATED_BODY()
 	
 public:
-	AEscapee();
+	AEscapee(const class FObjectInitializer& ObjectInitializer);
 };

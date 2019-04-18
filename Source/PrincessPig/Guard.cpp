@@ -4,7 +4,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 
-AGuard::AGuard()
+AGuard::AGuard(const class FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Configure avoidance group
 	FNavAvoidanceMask DefaultAvoidanceGroup;

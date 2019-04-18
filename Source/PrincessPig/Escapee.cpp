@@ -5,7 +5,8 @@
 #include "Components/CapsuleComponent.h"
 
 
-AEscapee::AEscapee()
+AEscapee::AEscapee(const class FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Configure avoidance group
 	FNavAvoidanceMask DefaultAvoidanceGroup;

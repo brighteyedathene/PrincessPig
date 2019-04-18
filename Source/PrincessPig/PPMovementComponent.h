@@ -13,8 +13,9 @@ UCLASS()
 class PRINCESSPIG_API UPPMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
-	
-	
+
+public:
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 	
 	
 };
