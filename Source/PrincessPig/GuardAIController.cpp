@@ -251,7 +251,8 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I hear a %s! Sounds like a %s!"), *Actor->GetName(), *Tag.ToString()));
 
 	// Maybe create a search at this location
-	if (Actor->ActorHasTag("Character.Escapee"))
+	if (Actor->ActorHasTag("Character.Escapee") ||
+		Actor->ActorHasTag("Character.Guard"))
 	{
 		if (ShouldSetNewObjective(EObjectiveType::Search, Actor))
 		{
