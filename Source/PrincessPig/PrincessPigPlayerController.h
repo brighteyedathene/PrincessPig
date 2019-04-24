@@ -74,6 +74,17 @@ public:
 
 #pragma endregion FollowInterface
 
+
+
+#pragma region GameplayEvents
+
+	/** Called when the player's character dies. Maybe use this to spawn a ghost! */
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "GameplayEvents")
+	void BPEvent_OnCharacterDeath();
+
+#pragma endregion GameplayEvents
+
+
 };
 
 

@@ -299,10 +299,10 @@ bool AGuardAIController::ShouldSetNewObjective(EObjectiveType NewType, AActor* N
 		if (!CurrentObjective ||
 			!CurrentObjective->TargetActor ||
 			CurrentObjective->Type == EObjectiveType::None ||
-			(CurrentObjective->Type == EObjectiveType::Search && CurrentObjective->TargetActor->ActorHasTag("Guard")) ||
-			(CurrentObjective->Type == EObjectiveType::Chase && NewObjectiveIsCloser) ||
-			//(CurrentObjective->Type == EObjectiveType::Distraction && NewObjectiveIsCloser) ||
 			(CurrentObjective->Type == EObjectiveType::Distraction) ||
+			(CurrentObjective->Type == EObjectiveType::Search && CurrentObjective->TargetActor->ActorHasTag("Guard")) ||
+			(CurrentObjective->Type == EObjectiveType::Chase && NewType == EObjectiveType::Chase && NewObjectiveIsCloser) ||
+			//(CurrentObjective->Type == EObjectiveType::Distraction && NewObjectiveIsCloser) ||
 			(!(bObjectiveInSight || IsObjectiveInteractionAvailable())))
 		{
 			return true;

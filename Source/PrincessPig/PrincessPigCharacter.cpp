@@ -1,6 +1,7 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "PrincessPigCharacter.h"
+#include "PrincessPigPlayerController.h"
 #include "InteractionComponent.h"
 #include "Follow.h"
 #include "UObject/ConstructorHelpers.h"
@@ -315,6 +316,13 @@ void APrincessPigCharacter::Server_TakeDamage_Implementation(float Damage)
 
 		// Call the blueprint event for blueprint effects
 		BPEvent_OnDie();
+
+		// Do the same for the player controller, if applicable
+		APrincessPigPlayerController* PPPController = Cast<APrincessPigPlayerController>(GetController());
+		if (PPPController)
+		{
+			PPPController->BPEvent_OnCharacterDeath();
+		}
 	}
 }
 
