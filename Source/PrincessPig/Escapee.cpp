@@ -20,7 +20,7 @@ AEscapee::AEscapee()
 	RunSpeed = 500;
 
 	SetGenericTeamId(255);
-	Tags.AddUnique(FName("Character.Escapee"));
+	Tags.AddUnique(FName("Escapee"));
 }
 
 

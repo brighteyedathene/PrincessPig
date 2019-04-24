@@ -33,7 +33,7 @@ AGuard::AGuard()
 
 
 	SetGenericTeamId(FGenericTeamId(1));
-	Tags.AddUnique(FName("Character.Guard"));
+	Tags.AddUnique(FName("Guard"));
 }
 
 

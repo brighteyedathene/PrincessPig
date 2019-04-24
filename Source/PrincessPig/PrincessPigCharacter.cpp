@@ -360,7 +360,7 @@ void APrincessPigCharacter::Server_Interact_Implementation(AActor* InteractTarge
 			Server_PickUpItem(InteractTarget);
 		}
 
-		else if (InteractTarget->ActorHasTag("Character.Escapee"))
+		else if (InteractTarget->ActorHasTag("Escapee"))
 		{
 			APrincessPigCharacter* Escapee = Cast<APrincessPigCharacter>(InteractTarget);
 			if (Escapee)

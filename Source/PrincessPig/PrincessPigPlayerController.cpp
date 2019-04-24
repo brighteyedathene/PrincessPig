@@ -236,7 +236,7 @@ AActor* APrincessPigPlayerController::GetHighestPriorityInteraction()
 				}
 			}
 
-			else if (Actor->ActorHasTag("Character.Escapee"))
+			else if (Actor->ActorHasTag("Escapee"))
 			{
 				APrincessPigCharacter* Escapee = Cast<APrincessPigCharacter>(Actor);
 				if (Escapee && Escapee->Replicated_CanBecomeFollower)
