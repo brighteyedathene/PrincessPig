@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -53,6 +54,13 @@ APrincessPigCharacter::APrincessPigCharacter()
 		ItemHandle->SetupAttachment(RootComponent);
 		ItemHandle->SetRelativeLocation(FVector(50, 30, 0));
 		ItemHandle->SetRelativeRotation(FRotator(0, 0, -25));
+	}
+
+	// Animate bones even when offscreen, so that server can handle all the bone-attached hitboxes
+	if (GetMesh() && HasAuthority())
+	{
+		GetMesh()->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::AlwaysTickPoseAndRefreshBones;
+		// If this becomes too expensive, then static hitboxes in front of the mesh should be used.
 	}
 
 	// Don't rotate character to control rotation (this doesn't make use of RotationRate!)
