@@ -150,7 +150,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 		}
 	}
 
-	DebugShowObjective();
+	//DebugShowObjective();
 
 }
 
