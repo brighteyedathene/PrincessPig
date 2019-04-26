@@ -152,6 +152,13 @@ void AGuardAIController::Tick(float DeltaSeconds)
 
 	DebugShowObjective();
 
+
+	// Show focus
+	if (GetFocusActor())
+	{
+		DrawDebugLine(GetWorld(), GetFocusActor()->GetActorLocation(), GetPawn()->GetActorLocation(), FColor::Green, false, 0, 0, 5.f);
+	}
+
 }
 
 #pragma region Perception
