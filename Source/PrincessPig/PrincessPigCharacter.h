@@ -8,6 +8,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "PrincessPigCharacter.generated.h"
 
+class UTextRenderComponent;
 class UBehaviorTree;
 class APatrolRoute;
 class AItem;
@@ -312,6 +313,26 @@ public:
 	virtual void UpdateFollowerStatus(APrincessPigCharacter* Follower, bool bIsFollowing);
 
 #pragma endregion FollowAndLead
+
+
+
+#pragma region OverheadMessages
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OverheadMessages")
+	UTextRenderComponent* OverheadText;
+
+	FTimerHandle OverheadMessageTimerHandle;
+
+	UFUNCTION(Server, Unreliable, WithValidation, BlueprintCallable, Category = "OverheadMessages")
+	void Server_BroadcastOverheadMessage(float Duration, FColor Color, const FText& Message);
+
+	UFUNCTION(NetMulticast, Unreliable, WithValidation, BlueprintCallable, Category = "OverheadMessages")
+	void Multicast_ShowOverheadMessage(float Duration, FColor Color, const FText& Message);
+
+	UFUNCTION()
+	void OnMessageTimerExpired();
+
+#pragma endregion OverheadMessages
 
 
 

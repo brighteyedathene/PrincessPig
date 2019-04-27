@@ -145,7 +145,12 @@ void AGuardAIController::Tick(float DeltaSeconds)
 				// If the target is dead, there's nothing more to do (FOR NOW)
 				if (PPCharacter->Replicated_IsDead)
 				{
-					DowngradeObjectiveToSearch();
+					// No need to notify OnObjectivechanged here
+					//DowngradeObjectiveToSearch();
+					
+					CurrentObjective->SetObjectiveType(EObjectiveType::Search);
+
+					CheckCurrentLineOfSight();
 				}
 
 			}
@@ -286,20 +291,11 @@ void AGuardAIController::RespondToActorTouched(AActor* Actor)
 	}
 
 	// Maybe create an objective based on this actor
-	if (Actor->ActorHasTag("Escapee") ||
-		Actor->ActorHasTag("Guard"))
+	if (Actor->ActorHasTag("Escapee"))
 	{
 		if (CurrentObjective && CurrentObjective->TargetActor == Actor)
 		{
 			// We don't want to retrigger a search on the same actor
-			return;
-		}
-
-		if (CurrentObjective && 
-			(CurrentObjective->Type == EObjectiveType::Search || CurrentObjective->Type == EObjectiveType::Chase) &&
-			Actor->ActorHasTag("Guard"))
-		{
-			// we don't want to be too precious about touching guards during a chase
 			return;
 		}
 
@@ -486,6 +482,9 @@ void AGuardAIController::DowngradeObjectiveToSearch()
 {
 	if (CurrentObjective && CurrentObjective->Type != EObjectiveType::None)
 	{
+		// Broadcast the objective changed event
+		OnObjectiveChanged.Broadcast(CurrentObjective->Type, EObjectiveType::Search);
+
 		CurrentObjective->SetObjectiveType(EObjectiveType::Search);
 		
 		CheckCurrentLineOfSight();
@@ -494,7 +493,10 @@ void AGuardAIController::DowngradeObjectiveToSearch()
 
 
 
-void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType) {}
+void AGuardAIController::RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType) 
+{
+	BPEvent_ObjectiveChanged(OldType, NewType);
+}
 
 
 #pragma endregion Objective

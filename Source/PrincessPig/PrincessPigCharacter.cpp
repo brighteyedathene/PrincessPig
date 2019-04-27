@@ -8,6 +8,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -114,6 +115,16 @@ APrincessPigCharacter::APrincessPigCharacter()
 	Replicated_MaxHealth = 1.f;
 	Replicated_CurrentHealth = Replicated_MaxHealth;
 	Replicated_IsDead = false;
+
+	// Overhead messages
+	OverheadText = CreateDefaultSubobject<UTextRenderComponent>("OverheadText");
+	OverheadText->SetupAttachment(RootComponent);
+	OverheadText->SetRelativeLocation(FVector(0, 0, 156));
+	OverheadText->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
+	OverheadText->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
+	OverheadText->SetWorldSize(100);
+	OverheadText->SetText(FText::FromString(""));
+
 }
 
 void APrincessPigCharacter::BeginPlay()
@@ -129,6 +140,11 @@ void APrincessPigCharacter::BeginPlay()
 void APrincessPigCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+
+	FVector CameraLocation;
+	FRotator CameraRotation;
+	GEngine->GetFirstLocalPlayerController(GetWorld())->PlayerCameraManager->GetCameraViewPoint(CameraLocation, CameraRotation);
+	OverheadText->SetWorldRotation(FRotator(0, CameraRotation.Yaw + 180, 0));
 }
 
 
@@ -537,6 +553,31 @@ void APrincessPigCharacter::UpdateFollowerStatus(APrincessPigCharacter* Follower
 }
 
 #pragma endregion FollowAndLead
+
+
+
+#pragma region OverheadMessages
+
+bool APrincessPigCharacter::Server_BroadcastOverheadMessage_Validate(float Duration, FColor Color, const FText& Message) { return true; }
+void APrincessPigCharacter::Server_BroadcastOverheadMessage_Implementation(float Duration, FColor Color, const FText& Message)
+{
+	Multicast_ShowOverheadMessage(Duration, Color, Message);
+}
+
+bool APrincessPigCharacter::Multicast_ShowOverheadMessage_Validate(float Duration, FColor Color, const FText& Message) { return true; }
+void APrincessPigCharacter::Multicast_ShowOverheadMessage_Implementation(float Duration, FColor Color, const FText& Message)
+{
+	OverheadText->SetText(Message);
+	OverheadText->SetTextRenderColor(Color);
+	GetWorld()->GetTimerManager().SetTimer(OverheadMessageTimerHandle, this, &APrincessPigCharacter::OnMessageTimerExpired, Duration, false);
+}
+
+void APrincessPigCharacter::OnMessageTimerExpired()
+{
+	OverheadText->SetText(FText::FromString(""));
+}
+
+#pragma endregion OverheadMessages
 
 
 

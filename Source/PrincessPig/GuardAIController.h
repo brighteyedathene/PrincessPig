@@ -131,6 +131,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Objective")
 	virtual void RespondToObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Objective")
+	void BPEvent_ObjectiveChanged(EObjectiveType OldType, EObjectiveType NewType);
+
 #pragma endregion Objective
 
 
