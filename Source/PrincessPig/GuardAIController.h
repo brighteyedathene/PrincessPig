@@ -78,6 +78,9 @@ public:
 	virtual void RespondToActorHeard(AActor* Actor, FName Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Perception")
+	virtual void RespondToActorTouched(AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "Perception")
 	virtual void CheckCurrentLineOfSight();
 
 #pragma endregion Perception

@@ -33,7 +33,6 @@ AGuardAIController::AGuardAIController()
 
 	if (SightConfig)
 	{
-		// Sight configuration
 		SightConfig->SetMaxAge(1.f);
 		SightConfig->SightRadius = 1200;
 		SightConfig->LoseSightRadius = 1500;
@@ -48,7 +47,6 @@ AGuardAIController::AGuardAIController()
 
 	if (HearingConfig)
 	{
-		// Hearing configuration
 		HearingConfig->SetMaxAge(0.01f);
 		HearingConfig->HearingRange = 1200;
 		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -82,35 +80,39 @@ void AGuardAIController::Possess(APawn* Pawn)
 
 	// Create objective uobject
 	CurrentObjective = NewObject<UObjective>();
-	
+
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Pawn);
-	if (PPCharacter)
+	if (nullptr == PPCharacter)
 	{
-		// Start up blackboard and behavior tree
-		if (PPCharacter->BehaviorTree->BlackboardAsset)
-		{
-			BlackboardComp->InitializeBlackboard(*(PPCharacter->BehaviorTree->BlackboardAsset));
-		}
-		BehaviorTreeComp->StartTree(*PPCharacter->BehaviorTree);
-
-		// Get this guard's team
-		SetGenericTeamId(PPCharacter->GetGenericTeamId());
-
-		// Use collision avoidance
-		PPCharacter->SetCollisionAvoidanceEnabled(true);
-
-		// Configure avoidance group (0 for guards)
-		FNavAvoidanceMask DefaultAvoidanceGroup;
-		DefaultAvoidanceGroup.ClearAll();
-		DefaultAvoidanceGroup.SetGroup(0);
-		PPCharacter->GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
-		
-		// Don't try to avoid players or escapees (groups 1 and 2)
-		FNavAvoidanceMask DefaultGroupsToIgnore;
-		DefaultGroupsToIgnore.SetGroup(1);
-		DefaultGroupsToIgnore.SetGroup(2);
-		PPCharacter->GetCharacterMovement()->SetGroupsToIgnoreMask(DefaultGroupsToIgnore);
+		return;
 	}
+
+
+	// Start up blackboard and behavior tree
+	if (PPCharacter->BehaviorTree->BlackboardAsset)
+	{
+		BlackboardComp->InitializeBlackboard(*(PPCharacter->BehaviorTree->BlackboardAsset));
+	}
+	BehaviorTreeComp->StartTree(*PPCharacter->BehaviorTree);
+
+	// Get this guard's team
+	SetGenericTeamId(PPCharacter->GetGenericTeamId());
+
+	// Use collision avoidance
+	PPCharacter->SetCollisionAvoidanceEnabled(true);
+
+	// Configure avoidance group (0 for guards)
+	FNavAvoidanceMask DefaultAvoidanceGroup;
+	DefaultAvoidanceGroup.ClearAll();
+	DefaultAvoidanceGroup.SetGroup(0);
+	PPCharacter->GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
+
+	// Don't try to avoid players or escapees (groups 1 and 2)
+	FNavAvoidanceMask DefaultGroupsToIgnore;
+	DefaultGroupsToIgnore.SetGroup(1);
+	DefaultGroupsToIgnore.SetGroup(2);
+	PPCharacter->GetCharacterMovement()->SetGroupsToIgnoreMask(DefaultGroupsToIgnore);
+
 }
 
 void AGuardAIController::Tick(float DeltaSeconds)
@@ -118,7 +120,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	// Some objectives (like Chase) require constant updates
-	if (CurrentObjective)
+	if (CurrentObjective && CurrentObjective->Type == EObjectiveType::Chase)
 	{
 		// Refresh the pursuit location
 		if (bObjectiveInSight)
@@ -150,14 +152,14 @@ void AGuardAIController::Tick(float DeltaSeconds)
 		}
 	}
 
-	DebugShowObjective();
+	//DebugShowObjective();
 
 
 	// Show focus
-	if (GetFocusActor())
-	{
-		DrawDebugLine(GetWorld(), GetFocusActor()->GetActorLocation(), GetPawn()->GetActorLocation(), FColor::Green, false, 0, 0, 5.f);
-	}
+	//if (GetFocusActor())
+	//{
+	//	DrawDebugLine(GetWorld(), GetFocusActor()->GetActorLocation(), GetPawn()->GetActorLocation(), FColor::Green, false, 0, 0, 5.f);
+	//}
 
 }
 
@@ -232,7 +234,9 @@ void AGuardAIController::RespondToActorSeen(AActor* Actor)
 	if (Actor == CurrentObjective->TargetActor)
 	{
 		bObjectiveInSight = true;
-		SetFocus(Actor, EAIFocusPriority::Gameplay);
+
+		// Setting focus was moved to a BTService
+		//SetFocus(Actor, EAIFocusPriority::Gameplay);
 	}
 }
 
@@ -245,6 +249,8 @@ void AGuardAIController::RespondToActorSightLost(AActor* Actor)
 	{
 		// lost sight of objective target!
 		bObjectiveInSight = false;
+
+		// Losing sight should immediately clear focus (that's why it's not left entirely to the BTService)
 		ClearFocus(EAIFocusPriority::Gameplay);
 
 		// might want to check the other currently perceived actors for something better
@@ -267,6 +273,45 @@ void AGuardAIController::RespondToActorHeard(AActor* Actor, FName Tag)
 		}
 	}
 
+}
+
+// This function should be bound in blueprint
+void AGuardAIController::RespondToActorTouched(AActor* Actor)
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::White, FString::Printf(TEXT("I feel a %s!"), *Actor->GetName()));
+
+	if (nullptr == Actor || Actor->IsPendingKillOrUnreachable())
+	{
+		return;
+	}
+
+	// Maybe create an objective based on this actor
+	if (Actor->ActorHasTag("Escapee") ||
+		Actor->ActorHasTag("Guard"))
+	{
+		if (CurrentObjective && CurrentObjective->TargetActor == Actor)
+		{
+			// We don't want to retrigger a search on the same actor
+			return;
+		}
+
+		if (CurrentObjective && 
+			(CurrentObjective->Type == EObjectiveType::Search || CurrentObjective->Type == EObjectiveType::Chase) &&
+			Actor->ActorHasTag("Guard"))
+		{
+			// we don't want to be too precious about touching guards during a chase
+			return;
+		}
+
+		APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(Actor);
+		if (PPCharacter && !PPCharacter->Replicated_IsDead)
+		{
+			if (ShouldSetNewObjective(EObjectiveType::Search, Actor))
+			{
+				SetNewObjective(EObjectiveType::Search, Actor);
+			}
+		}
+	}
 }
 
 
@@ -308,6 +353,7 @@ bool AGuardAIController::ShouldSetNewObjective(EObjectiveType NewType, AActor* N
 			CurrentObjective->Type == EObjectiveType::None ||
 			(CurrentObjective->Type == EObjectiveType::Distraction) ||
 			(CurrentObjective->Type == EObjectiveType::Search && CurrentObjective->TargetActor->ActorHasTag("Guard")) ||
+			(CurrentObjective->Type == EObjectiveType::Search && NewType == EObjectiveType::Chase) ||
 			(CurrentObjective->Type == EObjectiveType::Chase && NewType == EObjectiveType::Chase && NewObjectiveIsCloser) ||
 			//(CurrentObjective->Type == EObjectiveType::Distraction && NewObjectiveIsCloser) ||
 			(!(bObjectiveInSight || IsObjectiveInteractionAvailable())))

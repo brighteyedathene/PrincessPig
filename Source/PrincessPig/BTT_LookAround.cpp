@@ -22,7 +22,7 @@ EBTNodeResult::Type UBTT_LookAround::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		FVector NewFocalPoint = GuardAI->GetPawn()->GetActorLocation() + NewRotation.Vector() * 300;
 
 		// Set the focal point
-		GuardAI->SetFocalPoint(NewFocalPoint);
+		GuardAI->SetFocalPoint(NewFocalPoint, EAIFocusPriority::Gameplay);
 
 		// Initialise the timer
 		BlackboardComp->SetValueAsFloat(GuardAI->TimerKey, 0.f);
