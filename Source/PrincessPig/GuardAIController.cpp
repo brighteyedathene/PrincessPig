@@ -119,6 +119,17 @@ void AGuardAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	
+	bool IsBlinded = false;
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		IsBlinded = PPCharacter->IsBlinded();
+		if (IsBlinded)
+		{
+			bObjectiveInSight = false;
+		}
+	}
+
 	// Some objectives (like Chase) require constant updates
 	if (CurrentObjective && CurrentObjective->Type == EObjectiveType::Chase)
 	{
@@ -172,6 +183,14 @@ void AGuardAIController::Tick(float DeltaSeconds)
 
 void AGuardAIController::RespondToPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
 {
+	// If we are blinded, we shuoldn't do anything about sight percepts
+	bool IsBlinded = false;
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		IsBlinded = PPCharacter->IsBlinded();
+	}
+
 	for (auto & Actor : UpdatedActors)
 	{
 		FActorPerceptionBlueprintInfo PerceptionInfo;
@@ -184,7 +203,7 @@ void AGuardAIController::RespondToPerceptionUpdated(const TArray<AActor*>& Updat
 			switch (Stimulus.Type.Index)
 			{
 			case 0: // sight
-				if (Stimulus.IsActive())
+				if (Stimulus.IsActive() && !IsBlinded)
 				{
 					OnActorSeen.Broadcast(Actor);
 				}
@@ -313,6 +332,13 @@ void AGuardAIController::RespondToActorTouched(AActor* Actor)
 
 void AGuardAIController::CheckCurrentLineOfSight()
 {
+	// If we are blinded, do nothing
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter && PPCharacter->IsBlinded())
+	{
+		return;
+	}
+
 	TArray<AActor*> PerceivedActors;
 	GetPerceptionComponent()->GetCurrentlyPerceivedActors(nullptr, PerceivedActors);
 	for (auto & Actor : PerceivedActors)
