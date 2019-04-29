@@ -265,6 +265,39 @@ public:
 #pragma endregion OffBalance
 
 
+
+#pragma region Blinded
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Blinded")
+		bool IsBlinded() { return Replicated_IsBlinded; }
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsBlinded)
+		bool Replicated_IsBlinded;
+
+	FTimerHandle BlindedTimer;
+
+	UFUNCTION(Category = "Blinded")
+		virtual void OnRep_IsBlinded();
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Blinded")
+		void Server_SetBlindedDirectly(bool Blinded);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Blinded")
+		void Server_SetBlindedFor(float Duration);
+
+	UFUNCTION()
+		void OnBlindedTimerExpired();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Blinded")
+		void BPEvent_OnBeginBlinded();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Blinded")
+		void BPEvent_OnEndBlinded();
+
+#pragma endregion Blinded
+
+
+
 #pragma region Health
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")

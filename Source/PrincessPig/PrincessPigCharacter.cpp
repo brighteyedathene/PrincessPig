@@ -309,6 +309,49 @@ void APrincessPigCharacter::OnOffBalanceTimerExpired()
 
 
 
+#pragma region Blinded
+
+bool APrincessPigCharacter::Server_SetBlindedDirectly_Validate(bool Blinded) { return true; }
+void APrincessPigCharacter::Server_SetBlindedDirectly_Implementation(bool Blinded)
+{
+	GetWorld()->GetTimerManager().ClearTimer(BlindedTimer);
+	Replicated_IsBlinded = Blinded;
+	OnRep_IsBlinded();
+}
+
+bool APrincessPigCharacter::Server_SetBlindedFor_Validate(float Duration) { return Duration > 0; }
+void APrincessPigCharacter::Server_SetBlindedFor_Implementation(float Duration)
+{
+	GetWorld()->GetTimerManager().SetTimer(BlindedTimer, this, &APrincessPigCharacter::OnBlindedTimerExpired, Duration);
+	Replicated_IsBlinded = true;
+	OnRep_IsBlinded();
+}
+
+void APrincessPigCharacter::OnRep_IsBlinded()
+{
+	if (Replicated_IsBlinded)
+	{
+		BPEvent_OnBeginBlinded();
+	}
+	else
+	{
+		BPEvent_OnEndBlinded();
+	}
+
+	// OffBalance affects movement capabilities
+	UpdateMovementModifiers();
+}
+
+void APrincessPigCharacter::OnBlindedTimerExpired()
+{
+	Replicated_IsBlinded = false;
+	OnRep_IsBlinded();
+}
+
+#pragma endregion OffBalance
+
+
+
 #pragma region Health
 
 bool APrincessPigCharacter::Server_TakeDamage_Validate(float Damage) { return true; }
@@ -614,6 +657,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsDead);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsOffBalance);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsBlinded);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapDynamic);
 	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);
