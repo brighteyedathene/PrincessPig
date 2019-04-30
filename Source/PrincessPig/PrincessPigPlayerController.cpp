@@ -22,10 +22,11 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 
-	// Apply movement input
+	
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter)
 	{
+		// Apply movement input
 		if (PPCharacter->IsAcceptingPlayerInput())
 		{
 			PPCharacter->AddMovementInput(FVector::ForwardVector, ForwardInput);
@@ -34,6 +35,11 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 			// interpolate control rotation towards the input direction added above
 			UpdateControlRotation(DeltaTime);
 		}
+
+
+		// Update audio listener rotation!
+		// Audio sources shuold be oriented with respect to the camera
+		SetAudioListenerOverride((USceneComponent*)PPCharacter->GetCapsuleComponent(), FVector(0, 0, 0), PPCharacter->GetActorRotation().GetInverse());
 	}
 
 	// Print the current interaction
@@ -45,6 +51,8 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 			DrawDebugDirectionalArrow(GetWorld(), GetPawn()->GetActorLocation(), GetHighestPriorityInteraction()->GetActorLocation(), 1000, FColor::Cyan, false, 0, 0, 6.f);
 		}
 	}
+
+
 }
 
 void APrincessPigPlayerController::UpdateControlRotation(float DeltaTime)
@@ -101,7 +109,7 @@ void APrincessPigPlayerController::Possess(APawn* Pawn)
 		PPCharacter->Replicated_CanBecomeFollower = false;
 
 		// By default, players should be running - maybe later I'll add some shift+WASD or sensitive thumbstick controls
-		PPCharacter->SetMovementMode(EPPMovementMode::Running);
+		PPCharacter->SetMovementMode(EPPMovementMode::Running);	
 	}
 }
 
