@@ -46,9 +46,6 @@ void AEscapeeAIController::Possess(APawn* Pawn)
 		DefaultAvoidanceGroup.SetGroup(1);
 		PPCharacter->GetCharacterMovement()->SetAvoidanceGroupMask(DefaultAvoidanceGroup);
 
-		// These AI guys shouldn't block player movement
-		PPCharacter->Server_SetAllowOverlapPawns(true);
-
 		// Allow AI escapees to be lead
 		PPCharacter->Replicated_CanBecomeFollower = true;
 	}

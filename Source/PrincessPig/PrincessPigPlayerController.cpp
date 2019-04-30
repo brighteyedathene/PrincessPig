@@ -34,6 +34,9 @@ void APrincessPigPlayerController::PlayerTick(float DeltaTime)
 
 			// interpolate control rotation towards the input direction added above
 			UpdateControlRotation(DeltaTime);
+
+			// Set Player input force on server (used for pushing AI characters)
+			PPCharacter->Server_SetPlayerInputForce(FVector2D(ForwardInput, RightInput).Size());
 		}
 
 

@@ -91,8 +91,16 @@ public:
 
 
 
-#pragma region MovementModes
+#pragma region Movement
 	
+	/** How much force is the player trying to move with? */
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Movement")
+	float PlayerInputForce;
+
+	/** Allows the player controller to tell the server how much force they want */
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Movement")
+	void Server_SetPlayerInputForce(float Value);
+
 	UPROPERTY(Replicated, Transient, BlueprintReadWrite, Category = "Movement")
 	EPPMovementMode MovementMode;
 
@@ -128,7 +136,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		virtual void UpdateMovementModifiers();
 
-#pragma endregion MovementModes
+#pragma endregion Movement
 
 
 

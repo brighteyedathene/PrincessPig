@@ -161,7 +161,14 @@ void APrincessPigCharacter::SetCollisionAvoidanceEnabled(bool Enable)
 
 
 
-#pragma region MovementModes
+#pragma region Movement
+
+bool APrincessPigCharacter::Server_SetPlayerInputForce_Validate(float Value) { return true; }
+void APrincessPigCharacter::Server_SetPlayerInputForce_Implementation(float Value)
+{
+	PlayerInputForce = Value;
+}
+
 
 bool APrincessPigCharacter::IsAcceptingPlayerInput()
 {
@@ -218,7 +225,7 @@ void APrincessPigCharacter::UpdateMovementModifiers()
 }
 
 
-#pragma endregion MovementModes
+#pragma endregion Movement
 
 
 

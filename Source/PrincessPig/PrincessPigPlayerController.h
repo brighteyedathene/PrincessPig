@@ -27,7 +27,9 @@ public:
 
 #pragma region InputEvents
 
+	UPROPERTY(BlueprintReadOnly, Category = "Input")
 	float ForwardInput;
+	UPROPERTY(BlueprintReadOnly, Category = "Input")
 	float RightInput;
 
 	/** Input handlers */
