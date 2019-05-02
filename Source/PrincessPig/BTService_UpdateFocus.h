@@ -24,4 +24,8 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintreadWrite, Category = "Focus")
 	bool bRequireLineOfSight;
+
+	/** Do not focus on actors beyond this range. */
+	UPROPERTY(EditAnywhere, BlueprintreadWrite, Category = "Focus")
+	float MaxFocusDistance;
 };

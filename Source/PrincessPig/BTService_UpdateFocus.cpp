@@ -18,7 +18,11 @@ void UBTService_UpdateFocus::TickNode(UBehaviorTreeComponent & OwnerComp, uint8 
 	{
 		return;
 	}
-
+	APawn* OwnerPawn = OwnerAIController->GetPawn();
+	if (nullptr == OwnerPawn)
+	{
+		return;
+	}
 
 	// If the target is an actor, check line of sight
 	AActor* TargetActor = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TargetKey.SelectedKeyName));
@@ -27,8 +31,11 @@ void UBTService_UpdateFocus::TickNode(UBehaviorTreeComponent & OwnerComp, uint8 
 		// Set focus if we have line of sight, or if we don't need it
 		if (!bRequireLineOfSight || OwnerAIController->LineOfSightTo(TargetActor))
 		{
-			OwnerAIController->SetFocus(TargetActor, EAIFocusPriority::Gameplay);
-			return;
+			if (MaxFocusDistance == 0.0 || FVector::Distance(TargetActor->GetActorLocation(), OwnerPawn->GetActorLocation()) < MaxFocusDistance)
+			{
+				OwnerAIController->SetFocus(TargetActor, EAIFocusPriority::Gameplay);
+				return;
+			}
 		}
 	}
 	else
