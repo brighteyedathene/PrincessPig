@@ -141,6 +141,8 @@ void APrincessPigCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
+
+	// Sets overhead Text Rotation to face camera
 	FVector CameraLocation;
 	FRotator CameraRotation;
 	GEngine->GetFirstLocalPlayerController(GetWorld())->PlayerCameraManager->GetCameraViewPoint(CameraLocation, CameraRotation);
