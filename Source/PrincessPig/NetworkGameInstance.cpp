@@ -75,7 +75,7 @@ bool UNetworkGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId, FS
 
 void UNetworkGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnCreateSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnCreateSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
 
 
 	// Get the OnlineSubsystem so we can get the Session Interface
@@ -117,7 +117,7 @@ void UNetworkGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void UNetworkGameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSuccessful)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnStartSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnStartSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
 
 	// Get the Online Subsystem so we can get the Session Interface
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
@@ -203,7 +203,7 @@ void UNetworkGameInstance::FindSessions(TSharedPtr<const FUniqueNetId> UserId, F
 
 void UNetworkGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OFindSessionsComplete bSuccess: %d"), bWasSuccessful));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OFindSessionsComplete bSuccess: %d"), bWasSuccessful));
 
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if (!OnlineSubsystem)
@@ -310,7 +310,7 @@ bool UNetworkGameInstance::JoinSession(TSharedPtr<const FUniqueNetId> UserId, FN
 
 void UNetworkGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnJoinSessionComplete %s, %d"), *SessionName.ToString(), static_cast<int32>(Result)));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnJoinSessionComplete %s, %d"), *SessionName.ToString(), static_cast<int32>(Result)));
 
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if (!OnlineSubsystem)
@@ -346,7 +346,7 @@ void UNetworkGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 
 	if (SessionInterface->GetResolvedConnectString(SessionName, TravelURL))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("Calling ClientTravel to: %s"), *TravelURL));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("Calling ClientTravel to: %s"), *TravelURL));
 
 		// Finally, call ClientTravel
 		PlayerController->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute);
@@ -357,7 +357,7 @@ void UNetworkGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 
 void UNetworkGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnDestroySessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnDestroySessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
 
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if (!OnlineSubsystem)
