@@ -63,8 +63,6 @@ bool UNetworkGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId, FS
 	// Add the server name (given by user upon creating game) to search keywords 
 	SessionSettings->Set(SEARCH_KEYWORDS, UserSessionName, EOnlineDataAdvertisementType::ViaOnlineService);
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("HOSTING A GMAe, %d"), GameSessionName));
-
 
 	// Set the delegate to the Handle of the SessionInterface
 	OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
@@ -78,6 +76,7 @@ bool UNetworkGameInstance::HostSession(TSharedPtr<const FUniqueNetId> UserId, FS
 void UNetworkGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnCreateSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
+
 
 	// Get the OnlineSubsystem so we can get the Session Interface
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
@@ -104,6 +103,13 @@ void UNetworkGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 		// Our StartSessionComplete delegate should get called after this
 		SessionInterface->StartSession(SessionName);
+	}
+	else 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 100.f, FColor::Green, FString::Printf(TEXT("Please make sure you are signed in to Steam!")));
+		GEngine->AddOnScreenDebugMessage(-1, 100.f, FColor::Red, FString::Printf(TEXT("Failed to create session!")));
+
+		UGameplayStatics::OpenLevel(GetWorld(), "/Game/Maps/MainMenu", true, "");
 	}
 
 }
