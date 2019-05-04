@@ -329,7 +329,7 @@ public:
 
 #pragma region FollowAndLead
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	APrincessPigCharacter* Leader;
 	
 	UPROPERTY(Replicated)
