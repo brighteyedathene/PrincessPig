@@ -351,7 +351,9 @@ bool AGuardAIController::IsVisionImpaired()
 	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
 	if (PPCharacter) 
 	{
-		if (PPCharacter->IsBlinded() || PPCharacter->IsDistracted()) 
+		if (PPCharacter->IsBlinded() || 
+			PPCharacter->IsDistracted() ||
+			PPCharacter->Replicated_IsDead) 
 		{
 			return true;
 		}
