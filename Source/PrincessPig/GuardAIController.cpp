@@ -119,16 +119,17 @@ void AGuardAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (IsVisionImpaired())
+	// Some objectives (like Chase) require updates every frame
+	if (CurrentObjective)
 	{
-		bObjectiveInSight = false;
-	}
+		// Line of sight should be immediately invalidated
+		if (!LineOfSightTo(CurrentObjective->TargetActor) || IsVisionImpaired())
+		{
+			bObjectiveInSight = false;
+		}
 
-	// Some objectives (like Chase) require constant updates
-	if (CurrentObjective && CurrentObjective->Type == EObjectiveType::Chase)
-	{
 		// Refresh the pursuit location
-		if (bObjectiveInSight)
+		if (CurrentObjective->Type == EObjectiveType::Chase && bObjectiveInSight)
 		{
 			CurrentObjective->Refresh();
 			PursuitLocation = GetObjectivePursuitLocation();
@@ -162,7 +163,7 @@ void AGuardAIController::Tick(float DeltaSeconds)
 		}
 	}
 
-	//DebugShowObjective();
+	DebugShowObjective();
 
 
 	// Show focus
@@ -200,7 +201,7 @@ void AGuardAIController::RespondToPerceptionUpdated(const TArray<AActor*>& Updat
 				break;
 
 			case 1: // hearing
-				if (Stimulus.IsActive())
+				if (Stimulus.IsActive() && !IsHearingImpaired())
 				{
 					OnActorHeard.Broadcast(Actor, Stimulus.Tag);
 				}
@@ -354,6 +355,20 @@ bool AGuardAIController::IsVisionImpaired()
 		if (PPCharacter->IsBlinded() || 
 			PPCharacter->IsDistracted() ||
 			PPCharacter->Replicated_IsDead) 
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool AGuardAIController::IsHearingImpaired()
+{
+	APrincessPigCharacter* PPCharacter = Cast<APrincessPigCharacter>(GetPawn());
+	if (PPCharacter)
+	{
+		if (PPCharacter->Replicated_IsDead)
 		{
 			return true;
 		}

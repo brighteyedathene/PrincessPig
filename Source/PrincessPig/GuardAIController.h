@@ -86,6 +86,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Perception")
 	bool IsVisionImpaired();
 
+	UFUNCTION(BlueprintCallable, Category = "Perception")
+	bool IsHearingImpaired();
+
+
 #pragma endregion Perception
 
 #pragma region Objective
