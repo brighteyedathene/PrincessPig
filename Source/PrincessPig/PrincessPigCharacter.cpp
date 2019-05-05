@@ -357,7 +357,50 @@ void APrincessPigCharacter::OnBlindedTimerExpired()
 	OnRep_IsBlinded();
 }
 
-#pragma endregion OffBalance
+#pragma endregion Blinded
+
+
+
+#pragma region Distracted
+
+bool APrincessPigCharacter::Server_SetDistractedDirectly_Validate(bool Distracted) { return true; }
+void APrincessPigCharacter::Server_SetDistractedDirectly_Implementation(bool Distracted)
+{
+	GetWorld()->GetTimerManager().ClearTimer(DistractedTimer);
+	Replicated_IsDistracted = Distracted;
+	OnRep_IsDistracted();
+}
+
+bool APrincessPigCharacter::Server_SetDistractedFor_Validate(float Duration) { return Duration > 0; }
+void APrincessPigCharacter::Server_SetDistractedFor_Implementation(float Duration)
+{
+	GetWorld()->GetTimerManager().SetTimer(DistractedTimer, this, &APrincessPigCharacter::OnDistractedTimerExpired, Duration);
+	Replicated_IsDistracted = true;
+	OnRep_IsDistracted();
+}
+
+void APrincessPigCharacter::OnRep_IsDistracted()
+{
+	if (Replicated_IsDistracted)
+	{
+		BPEvent_OnBeginDistracted();
+	}
+	else
+	{
+		BPEvent_OnEndDistracted();
+	}
+
+	// OffBalance affects movement capabilities
+	UpdateMovementModifiers();
+}
+
+void APrincessPigCharacter::OnDistractedTimerExpired()
+{
+	Replicated_IsDistracted = false;
+	OnRep_IsDistracted();
+}
+
+#pragma endregion Distracted
 
 
 
@@ -667,6 +710,7 @@ void APrincessPigCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsSubdued);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsOffBalance);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsBlinded);
+	DOREPLIFETIME(APrincessPigCharacter, Replicated_IsDistracted);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapPawns);
 	DOREPLIFETIME(APrincessPigCharacter, Replicated_AllowOverlapDynamic);
 	DOREPLIFETIME(APrincessPigCharacter, AvailableInteractions);

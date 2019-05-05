@@ -83,6 +83,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Perception")
 	virtual void CheckCurrentLineOfSight();
 
+	UFUNCTION(BlueprintCallable, Category = "Perception")
+	bool IsVisionImpaired();
+
 #pragma endregion Perception
 
 #pragma region Objective

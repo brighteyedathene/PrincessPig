@@ -306,6 +306,38 @@ public:
 
 
 
+#pragma region Distracted
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Distracted")
+		bool IsDistracted() { return Replicated_IsDistracted; }
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsDistracted)
+		bool Replicated_IsDistracted;
+
+	FTimerHandle DistractedTimer;
+
+	UFUNCTION(Category = "Distracted")
+		virtual void OnRep_IsDistracted();
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Distracted")
+		void Server_SetDistractedDirectly(bool Distracted);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Distracted")
+		void Server_SetDistractedFor(float Duration);
+
+	UFUNCTION()
+		void OnDistractedTimerExpired();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Distracted")
+		void BPEvent_OnBeginDistracted();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Distracted")
+		void BPEvent_OnEndDistracted();
+
+#pragma endregion Distracted
+
+
+
 #pragma region Health
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Health")
